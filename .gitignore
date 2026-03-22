@@ -11,3 +11,5 @@ target/
 .jest_cache
 package-lock.json
 src/fluent/generated/
+docs/optimization-prompt.md
+docs/enhancement-roadmap.md
