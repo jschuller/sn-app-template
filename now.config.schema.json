@@ -1,0 +1,29 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "now-sdk Configuration",
+    "description": "Configuration for ServiceNow SDK (now-sdk) scoped application projects.",
+    "type": "object",
+    "required": ["scope", "scopeId", "name"],
+    "properties": {
+        "scope": {
+            "type": "string",
+            "pattern": "^x_[a-z0-9]+_[a-z0-9_]+$",
+            "description": "Application scope prefix (e.g., x_snc_example). Must match the sys_app scope on the target instance."
+        },
+        "scopeId": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$",
+            "description": "sys_id of the sys_app record on the target instance. Obtain from the instance after first deploy or from an existing app."
+        },
+        "name": {
+            "type": "string",
+            "description": "Display name of the application as it appears in ServiceNow."
+        },
+        "tsconfigPath": {
+            "type": "string",
+            "description": "Relative path to the TypeScript configuration for server-side code compilation.",
+            "default": "./src/server/tsconfig.json"
+        }
+    },
+    "additionalProperties": false
+}

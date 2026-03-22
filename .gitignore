@@ -1,0 +1,13 @@
+.DS_Store
+.env
+.env.local
+.mcp.json
+.now/
+dist/
+node_modules/
+target/
+@types/
+*.tsbuildinfo
+.jest_cache
+package-lock.json
+src/fluent/generated/

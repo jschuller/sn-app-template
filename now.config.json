@@ -1,0 +1,7 @@
+{
+    "$schema": "./now.config.schema.json",
+    "scope": "x_snc_example",
+    "scopeId": "f549d6087761826e47d16d46d7a7f71f",
+    "name": "Example App",
+    "tsconfigPath": "./src/server/tsconfig.json"
+}
