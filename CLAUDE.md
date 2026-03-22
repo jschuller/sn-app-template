@@ -107,6 +107,43 @@ UiPage({ $id: Now.ID['my_page'], endpoint: 'x_snc_example_mypage.do', html: myPa
 
 Add routes to the existing `RestApi()` in `src/fluent/rest-api/app-api.now.ts`. Scripts can instantiate Script Includes: `var svc = new x_snc_example.AppService();`
 
+## Adding ATF Tests
+
+Create `src/fluent/tests/my-test.now.ts`:
+```typescript
+import '@servicenow/sdk/global'
+import { Test } from '@servicenow/sdk/core'
+
+Test({
+    $id: Now.ID['my_test'],
+    active: true,
+    name: 'My Test Name',
+    description: 'What this test validates',
+}, (atf) => {
+    const record = atf.server.recordInsert({
+        table: 'x_snc_example_my_table',
+        fieldValues: { x_snc_example_field: 'test value' },
+        assert: 'record_successfully_inserted',
+        enforceSecurity: false,
+    })
+    atf.server.recordValidation({
+        table: 'x_snc_example_my_table',
+        recordId: record.record_id,
+        fieldValues: 'x_snc_example_field=test value^EQ',
+        assert: 'record_validated',
+    })
+    atf.server.recordDelete({
+        table: 'x_snc_example_my_table',
+        recordId: record.record_id,
+        enforceSecurity: false,
+    })
+})
+```
+
+Register in `src/fluent/index.now.ts`: `import './tests/my-test.now'`
+
+Available server steps: `recordInsert`, `recordValidation`, `recordQuery`, `recordDelete`, `runServerSideScript`, `impersonate`, `log`. REST steps (`sendRestRequest`, `assertStatusCode`) require a basic auth profile on the instance. See `src/fluent/tests/example-item-test.now.ts` for a complete example.
+
 ## Handling Secrets
 
 - Use `Property()` with `type: 'password2'` — encrypted at rest

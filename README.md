@@ -60,6 +60,7 @@ now-sdk install --auth YOUR_ALIAS
 | Business Rule | 1 | Default category |
 | Cross-scope privileges | 4 | Prevents REST 403 |
 | Seed records | 3 | Sample items |
+| ATF Test | 1 | Table, rule, and service validation |
 
 ## Architecture
 
@@ -77,12 +78,14 @@ graph TD
         SVC["AppService.server.js"]
     end
     subgraph CLIENT["src/client — React BYOUI"]
+        HTML["index.html"]
         JSX["App.jsx"]
         APISVC["ApiService.js"]
     end
 
     SI -->|"Now.include()"| SVC
-    UI -->|"HTML import"| JSX
+    UI -->|"HTML import"| HTML
+    HTML -->|"script tag"| JSX
     JSX --> APISVC
     APISVC -->|"fetch() + g_ck"| API
     API -->|"new AppService()"| SVC
@@ -144,6 +147,7 @@ src/
     ├── business-rules/        # Before/after rules
     ├── navigation/            # App menu
     ├── records/               # Seed data (Record API)
+    ├── tests/                 # ATF test definitions
     └── index.now.ts           # Barrel exports
 ```
 

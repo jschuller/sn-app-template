@@ -29,3 +29,6 @@ import './ui-pages/app-page.now'
 
 // Seed Data
 import './records/sample-data.now'
+
+// Tests
+import './tests/example-item-test.now'
