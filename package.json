@@ -1,26 +1,37 @@
 {
     "name": "example-app",
-    "version": "0.0.1",
-    "description": "ServiceNow scoped app built with now-sdk + Claude Code",
+    "version": "1.0.0",
+    "description": "ServiceNow scoped app built with now-sdk and an AI coding agent",
     "license": "MIT",
     "type": "module",
+    "engines": {
+        "node": ">=20.18.0"
+    },
     "imports": {
         "#now:*": "./@types/servicenow/fluent/*/index.js"
     },
     "scripts": {
+        "setup": "node scripts/setup.mjs",
         "build": "now-sdk build",
+        "build:ci": "now-sdk build --frozenKeys",
+        "lint": "eslint .",
         "deploy": "now-sdk install",
+        "test:instance": "now-sdk cicd testsuite run --test-suite-name \"Example App\"",
+        "pack": "now-sdk pack",
         "transform": "now-sdk transform",
-        "types": "now-sdk dependencies"
+        "types": "now-sdk dependencies",
+        "sync:skills": "node scripts/sync-skills.mjs"
     },
     "dependencies": {
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0"
+        "react": "18.2.0",
+        "react-dom": "18.2.0"
     },
     "devDependencies": {
-        "@servicenow/sdk": "4.4.0",
-        "@servicenow/glide": "27.0.4",
-        "eslint": "8.50.0",
-        "@servicenow/eslint-plugin-sdk-app-plugin": "4.4.0"
+        "@eslint/js": "10.0.1",
+        "@servicenow/glide": "27.0.5",
+        "@servicenow/sdk": "4.13.6",
+        "eslint": "10.12.0",
+        "eslint-plugin-react-hooks": "7.1.1",
+        "globals": "17.13.0"
     }
 }

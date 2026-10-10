@@ -1,8 +1,0 @@
-{
-    "plugins": ["@servicenow/eslint-plugin-sdk-app-plugin"],
-    "extends": ["plugin:@servicenow/eslint-plugin-sdk-app-plugin/recommended"],
-    "parserOptions": {
-        "ecmaVersion": 2020,
-        "sourceType": "module"
-    }
-}

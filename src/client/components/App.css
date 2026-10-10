@@ -1,15 +1,59 @@
+/* Horizon Design System variables (from <sdk:now-ux-globals>) let instance themes apply; fallbacks keep the page usable without them. */
 body {
     margin: 0;
+    background: var(--now-color-background-secondary, #f6f7f8);
+    color: var(--now-color-text-primary, #1f2328);
+    font-family: var(--now-font-family, 'Lato', 'Segoe UI', sans-serif);
+}
+
+.app { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+.app-header h1 { margin: 0; font-size: 1.75rem; }
+.app-header p { margin: 4px 0 24px; color: var(--now-color-text-secondary, #5c6670); }
+
+.app-card {
+    background: var(--now-color-background-primary, #fff);
+    border: 1px solid var(--now-color-border-primary, #d9dde1);
+    border-radius: 8px;
     padding: 20px;
-    background: #f8fafc;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-bottom: 24px;
+}
+.app-card h2 { margin-top: 0; font-size: 1.15rem; }
+
+.app-alert {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 12px 16px; margin-bottom: 24px; border-radius: 6px;
+    background: var(--now-color-alert-critical-0, #fdecea);
+    color: var(--now-color-alert-critical-3, #8e1d14);
 }
 
-button:hover {
-    opacity: 0.9;
+.app-button {
+    padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;
+    background: var(--now-color-interactive-primary, #0f62fe);
+    color: var(--now-color-text-inverse, #fff);
+}
+.app-button:disabled { opacity: 0.6; cursor: default; }
+.app-button--danger { background: var(--now-color-alert-critical-2, #c62828); }
+.app-button--bare { background: transparent; color: inherit; text-decoration: underline; padding: 0; }
+.app-button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid var(--now-color-focus-ring, #0f62fe);
+    outline-offset: 1px;
 }
 
-input:focus, select:focus {
-    outline: 2px solid #2563eb;
-    outline-offset: -1px;
+.item-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.item-form__field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; font-size: 0.875rem; }
+.item-form__field--wide { flex: 2; }
+.item-form input, .item-form select, .item-table select {
+    padding: 8px 10px; border-radius: 6px; font: inherit;
+    border: 1px solid var(--now-color-border-primary, #c3c8cd);
+}
+
+.item-table { width: 100%; border-collapse: collapse; }
+.item-table th { text-align: left; padding: 10px; border-bottom: 2px solid var(--now-color-border-primary, #d9dde1); }
+.item-table td { padding: 10px; border-bottom: 1px solid var(--now-color-border-secondary, #eceef0); vertical-align: middle; }
+.item-table__name { font-weight: 600; }
+.item-table__description { color: var(--now-color-text-secondary, #5c6670); max-width: 320px; overflow-wrap: anywhere; }
+
+.app-muted { color: var(--now-color-text-secondary, #5c6670); }
+.app-visually-hidden {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }

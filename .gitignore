@@ -1,15 +1,24 @@
-.DS_Store
-.env
-.env.local
-.mcp.json
-.now/
-dist/
+# Dependencies and build output
 node_modules/
+dist/
 target/
-@types/
+.now/
 *.tsbuildinfo
-.jest_cache
-package-lock.json
-src/fluent/generated/
+
+# Local configuration and secrets (never commit credentials)
+.env
+.env.*
+.mcp.json
+.pi/mcp.json
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/plans/
+
+# Local ServiceNow docs caches (ServiceNow copyright; keep out of the repo)
+docs/servicenow/
+
+# Local working notes
 docs/optimization-prompt.md
 docs/enhancement-roadmap.md
+
+.DS_Store

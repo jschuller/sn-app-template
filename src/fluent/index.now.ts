@@ -18,7 +18,7 @@ import './script-includes/app-script-includes.now'
 // REST API
 import './rest-api/app-api.now'
 
-// Cross-Scope Privileges (prevents REST Table API 403)
+// Cross-Scope Privileges (platform APIs this app calls from other scopes)
 import './privileges/cross-scope-privileges.now'
 
 // Navigation
