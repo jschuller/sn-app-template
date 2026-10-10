@@ -1,64 +1,39 @@
 /**
- * ApiService — REST API client for Example App.
+ * Client for the app's Scripted REST API (/api/x_snc_example/example_api).
  *
- * Uses fetch() with X-UserToken (g_ck) for CSRF protection.
- * IMPORTANT: GlideAjax does NOT work in BYOUI pages — always use fetch().
+ * BYOUI pages call REST with fetch(); GlideAjax does not work here. Every request
+ * sends the session's CSRF token (window.g_ck) as X-UserToken.
  */
-export class ApiService {
-    constructor() {
-        this.baseUrl = '/api/x_snc_example/example_api';
-    }
+const BASE_URL = '/api/x_snc_example/example_api';
+export const PAGE_SIZE = 50;
 
-    async listItems() {
-        const response = await fetch(`${this.baseUrl}/items`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-UserToken': window.g_ck,
-            },
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        return data.result;
+async function request(path, { method = 'GET', body } = {}) {
+    if (!window.g_ck) {
+        throw new Error('Missing session token (g_ck). Open this page from the instance.');
     }
+    const headers = { Accept: 'application/json', 'X-UserToken': window.g_ck };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
 
-    async createItem(item) {
-        const response = await fetch(`${this.baseUrl}/items`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-UserToken': window.g_ck,
-            },
-            body: JSON.stringify(item),
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return (await response.json()).result;
-    }
+    const response = await fetch(`${BASE_URL}${path}`, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (response.status === 204) return null;
 
-    async updateItem(sysId, updates) {
-        const response = await fetch(`${this.baseUrl}/items/${sysId}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-UserToken': window.g_ck,
-            },
-            body: JSON.stringify(updates),
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return (await response.json()).result;
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        // Scripted REST wraps bodies in `result`; platform errors (401/403) use top-level `error`.
+        const message = payload.result?.error?.message || payload.error?.message;
+        throw new Error(message || `Request failed (HTTP ${response.status})`);
     }
-
-    async deleteItem(sysId) {
-        const response = await fetch(`${this.baseUrl}/items/${sysId}`, {
-            method: 'DELETE',
-            headers: {
-                'Accept': 'application/json',
-                'X-UserToken': window.g_ck,
-            },
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return (await response.json()).result;
-    }
+    return payload.result;
 }
+
+export const ApiService = {
+    listItems: (offset = 0) => request(`/items?limit=${PAGE_SIZE}&offset=${offset}`),
+    createItem: (item) => request('/items', { method: 'POST', body: item }),
+    updateItem: (sysId, changes) =>
+        request(`/items/${encodeURIComponent(sysId)}`, { method: 'PATCH', body: changes }),
+    deleteItem: (sysId) => request(`/items/${encodeURIComponent(sysId)}`, { method: 'DELETE' }),
+};

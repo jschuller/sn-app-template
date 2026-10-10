@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "servicenow": {
+      "command": "uvx",
+      "args": ["mcp-server-servicenow==0.7.0"],
+      "env": {
+        "SERVICENOW_INSTANCE_URL": "${SERVICENOW_INSTANCE_URL}",
+        "SERVICENOW_AUTH_TYPE": "basic",
+        "SERVICENOW_USERNAME": "${SERVICENOW_USERNAME}",
+        "SERVICENOW_PASSWORD": "${SERVICENOW_PASSWORD}",
+        "SERVICENOW_READ_ONLY": "true"
+      }
+    }
+  }
+}

@@ -1,14 +1,14 @@
 import '@servicenow/sdk/global'
 import { Role } from '@servicenow/sdk/core'
 
-Role({
-    $id: Now.ID['example_admin_role'],
-    name: 'x_snc_example.admin',
-    description: 'Full access to all Example App features',
+// Role sys_ids are derived from `name`, so roles take no $id.
+export const exampleUserRole = Role({
+    name: 'x_snc_example.user',
+    description: 'View and create Example Items',
 })
 
-Role({
-    $id: Now.ID['example_user_role'],
-    name: 'x_snc_example.user',
-    description: 'View and create records',
+export const exampleAdminRole = Role({
+    name: 'x_snc_example.admin',
+    description: 'Full access to all Example App features',
+    containsRoles: [exampleUserRole],
 })

@@ -1,0 +1,16 @@
+name: Pattern request
+description: Propose a pattern the template should demonstrate (one validated pattern per concept).
+labels: [enhancement]
+body:
+  - type: textarea
+    id: pattern
+    attributes:
+      label: Pattern
+      description: Which ServiceNow capability or Fluent API, and what problem it solves for app builders.
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Proposed approach
+      description: Files it would touch and how it would be tested (ATF, build, instance check).

@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Superseded pull-request runs are cancelled; runs on main always finish, so an
+# instance deploy is never interrupted half-way.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Agent skills are in sync (.agents/skills -> .claude/skills)
+        run: npm run sync:skills -- --check
+
+      # --frozenKeys fails when src/fluent/generated/keys.ts is missing a key, so a
+      # build that would mint new sys_ids on every machine never reaches main.
+      - name: Build (frozen keys)
+        run: npm run build:ci
+
+      - name: Package
+        run: npm run pack
+
+  # Optional: deploy to a test instance and run the ATF suite. Runs only when the
+  # repository defines the SN_SDK_INSTANCE_URL variable and the OAuth client secrets
+  # (see README → "CI deploy"). Never point this at production.
+  instance-test:
+    needs: build
+    if: github.event_name == 'push' && vars.SN_SDK_INSTANCE_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: instance-test
+      cancel-in-progress: false
+    env:
+      SN_SDK_NODE_ENV: SN_SDK_CI_INSTALL
+      SN_SDK_AUTH_TYPE: oauth
+      SN_SDK_INSTANCE_URL: ${{ vars.SN_SDK_INSTANCE_URL }}
+      SN_SDK_OAUTH_CLIENT_ID: ${{ secrets.SN_SDK_OAUTH_CLIENT_ID }}
+      SN_SDK_OAUTH_CLIENT_SECRET: ${{ secrets.SN_SDK_OAUTH_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build:ci
+      - run: npm run deploy
+      - run: npm run test:instance -- -o json

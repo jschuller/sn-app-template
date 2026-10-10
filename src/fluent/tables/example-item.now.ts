@@ -1,13 +1,17 @@
 import '@servicenow/sdk/global'
-import { Table, StringColumn, ChoiceColumn, IntegerColumn, DateTimeColumn } from '@servicenow/sdk/core'
+import { Table, StringColumn, ChoiceColumn, IntegerColumn } from '@servicenow/sdk/core'
 
 export const x_snc_example_item = Table({
     name: 'x_snc_example_item',
     label: 'Example Item',
-    accessibleFrom: 'public',
+    display: 'x_snc_example_name',
+    // Web service access is what the REST Table API (/api/now/table) checks.
     allowWebServiceAccess: true,
-    actions: ['read', 'update', 'delete', 'create'],
-    callerAccess: 'none',
+    // Cross-scope access: other application scopes may read these records but not change them.
+    // Widen `actions` only when another scope must write here; use 'package_private' to hide the
+    // table from other scopes entirely.
+    accessibleFrom: 'public',
+    actions: { read: true },
     schema: {
         x_snc_example_name: StringColumn({ label: 'Name', maxLength: 200, mandatory: true }),
         x_snc_example_description: StringColumn({ label: 'Description', maxLength: 4000 }),
@@ -21,6 +25,5 @@ export const x_snc_example_item = Table({
             defaultValue: 'general',
         }),
         x_snc_example_priority: IntegerColumn({ label: 'Priority' }),
-        x_snc_example_created_date: DateTimeColumn({ label: 'Created Date' }),
     },
 })
