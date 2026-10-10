@@ -1,0 +1,26 @@
+# Weekly dependency updates. Nothing auto-merges: an SDK bump can change keys.ts and
+# instance behaviour, so each update needs a build and a test-instance check (RELEASING.md).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      servicenow:
+        patterns: ['@servicenow/*']
+      eslint:
+        patterns: ['eslint', '@eslint/*', 'eslint-plugin-*', 'globals']
+    ignore:
+      # The SDK's UI page guide pins React 18.2.0; move only when the SDK does.
+      - dependency-name: react
+      - dependency-name: react-dom
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
