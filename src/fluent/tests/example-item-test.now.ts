@@ -48,11 +48,20 @@ export const itemServiceTest = Test(
                     var missing = svc.createItem({ description: 'no name' });
                     assertEqual({ name: 'missing name is rejected', shouldbe: 400, value: missing.status });
 
+                    var notInteger = svc.createItem({ name: 'x', priority: true });
+                    assertEqual({ name: 'boolean priority is rejected', shouldbe: 400, value: notInteger.status });
+                    var hexString = svc.createItem({ name: 'x', priority: '0x3' });
+                    assertEqual({ name: 'hex priority is rejected', shouldbe: 400, value: hexString.status });
+
                     var list = svc.listItems({ limit: ['100'] });
                     assertEqual({ name: 'list succeeds', shouldbe: 200, value: list.status });
                     var found = list.body.filter(function(item) { return item.name === 'ATF item'; })[0];
                     assertEqual({ name: 'inserted item is listed', shouldbe: true, value: !!found });
                     assertEqual({ name: 'listed priority', shouldbe: 1, value: found ? found.priority : null });
+                    assertEqual({ name: 'admin may edit', shouldbe: true, value: found ? found.can_write : null });
+
+                    var farPage = svc.listItems({ offset: ['99999999999'] });
+                    assertEqual({ name: 'huge offset is capped, not an error', shouldbe: 200, value: farPage.status });
                 })(outputs, steps, params, stepResult, assertEqual);
             `,
         })

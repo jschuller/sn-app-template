@@ -92,8 +92,12 @@ for the SDK (`now-sdk`, from github.com/ServiceNow/sdk) teaches the same workflo
   'x_snc_example_<name>.do', html: imported, direct: true })` in `src/fluent/ui-pages/`. For record-centric lists and forms,
   the SDK's `ui-page-guide` recommends `@servicenow/react-components` (`NowRecordListConnected`, `RecordProvider`); this
   template's page deliberately shows the Scripted REST + `fetch()` pattern.
-- **Use a platform API from another scope:** add a `CrossScopePrivilege` (see `src/fluent/privileges/`). The app's own
-  tables never need one. If the instance logs "Security restricted: … was granted and added", declare that privilege.
+- **Call a platform API you have not used before** (a new `GlideRecord` method, `GlideDateTime`, `RESTMessageV2`, …):
+  the app runs with runtime access tracking **enforcing** (`now.config.json` → `accessControls`), so the call fails with
+  `Access to <API> from scope x_snc_example not allowed` until it is declared. Add a `CrossScopePrivilege`
+  (`targetType: 'scriptable'`, `operation: 'execute'`, `targetScope: 'global'`, `targetName: '<API>'`) to
+  `src/fluent/privileges/cross-scope-privileges.now.ts`, then deploy and run the ATF suite. The app's own tables never
+  need a privilege.
 - **Add an ATF test:** `Test()` in `src/fluent/tests/` and add it to the `TestSuite` there. Server steps
   (`recordInsert`, `recordValidation`, `runServerSideScript`, `createUser` with `impersonate`, …) need no REST auth profile.
   Every step gets its own `$id`. ATF rolls back the data a test creates.

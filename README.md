@@ -21,7 +21,8 @@
 
 The template is a small, complete app — a table, a secured REST API, a React UI page, ACLs, roles, a business rule and
 ATF tests — plus the instructions and skills that let a coding agent extend it the right way. Everything deploys with
-one command, and every pattern in it was verified on a ServiceNow Brazil instance.
+one command. The server side — install, ACLs, REST API, business rule, ATF — was verified on a ServiceNow Brazil
+instance; [docs/compatibility.md](docs/compatibility.md) lists exactly what was and was not checked.
 
 ## Quick start
 
@@ -61,9 +62,9 @@ Prerequisites: Node.js 20.18+ (24 recommended, see `.nvmrc`), a ServiceNow insta
 | Scripted REST API | 4 routes | List (paged), create, update, delete — validated, status codes 200/201/204/400/403/404 |
 | Script Include | 1 | `AppService`: CRUD through `GlideRecordSecure` so ACLs apply to the caller |
 | Business rule | 1 | Derives a default priority from the category |
-| UI page | 1 | React (BYOUI): list, create, inline edit, delete |
+| UI page | 1 | React (BYOUI): paged list, create, inline edit and delete where the user's ACLs allow |
 | Application menu | 1 menu, 2 modules | UI page and list view, visible to the user role |
-| Cross-scope privilege | 1 | `GlideRecordSecure.getValue` (needed where runtime access is enforced) |
+| Cross-scope privileges | 9 | The platform APIs the code calls; the app runs with runtime access **enforcing** |
 | ATF tests | 2 in 1 suite | Business rule and service; ACLs deny a user without roles |
 | Demo records | 3 | Loaded as demo data (`--demoData false` skips them) |
 
@@ -155,8 +156,9 @@ env_vars = ["SERVICENOW_INSTANCE_URL", "SERVICENOW_USERNAME", "SERVICENOW_PASSWO
 
 ## CI deploy (optional)
 
-`.github/workflows/ci.yml` lints, builds with frozen keys and packages on every push and pull request. Its
-`instance-test` job also deploys to a **test** instance and runs the ATF suite once you add the repository variable
+`.github/workflows/ci.yml` lints, builds with frozen keys and packages on every pull request and every push to
+`main`. Its `instance-test` job also deploys to a **test** instance on pushes to `main` and runs the ATF suite once
+you add the repository variable
 `SN_SDK_INSTANCE_URL` and the secrets `SN_SDK_OAUTH_CLIENT_ID` / `SN_SDK_OAUTH_CLIENT_SECRET` (OAuth client
 credentials; setup in `npx now-sdk explain ci-integration`). Promote to production through the Application Repository
 (`now-sdk cicd publish` / `cicd install`), not with `now-sdk install`.

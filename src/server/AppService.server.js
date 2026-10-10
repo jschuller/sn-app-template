@@ -13,19 +13,20 @@ var MAX_NAME = 200;
 var MAX_DESCRIPTION = 4000;
 var DEFAULT_LIMIT = 50;
 var MAX_LIMIT = 100;
+var MAX_OFFSET = 100000;
 
 var AppService = Class.create();
 AppService.prototype = {
     initialize: function() {},
 
     /**
-     * @param {Object} [queryParams] REST query params (values are arrays): limit, offset
-     * @returns {{status: number, body: Array}} items, newest first
+     * @param {Object} [queryParams] REST query params (values are arrays): limit (1-100), offset (0-100000)
+     * @returns {{status: number, body: Array}} items, newest first; each says whether the caller may edit or delete it
      */
     listItems: function(queryParams) {
         var params = queryParams || {};
         var limit = this._clamp(this._firstInt(params.limit, DEFAULT_LIMIT), 1, MAX_LIMIT);
-        var offset = Math.max(this._firstInt(params.offset, 0), 0);
+        var offset = this._clamp(this._firstInt(params.offset, 0), 0, MAX_OFFSET);
         var items = [];
         var gr = new GlideRecordSecure(ITEM_TABLE);
         gr.orderByDesc('sys_created_on');
@@ -112,11 +113,8 @@ AppService.prototype = {
         if (this._has(data, 'category') && CATEGORIES.indexOf(data.category) === -1) {
             return 'category must be one of: ' + CATEGORIES.join(', ');
         }
-        if (this._has(data, 'priority') && data.priority !== null) {
-            var priority = Number(data.priority);
-            if (Math.floor(priority) !== priority || priority < 1 || priority > 5) {
-                return 'priority must be an integer from 1 to 5';
-            }
+        if (this._has(data, 'priority') && data.priority !== null && !this._isPriority(data.priority)) {
+            return 'priority must be an integer from 1 to 5';
         }
         return '';
     },
@@ -138,7 +136,15 @@ AppService.prototype = {
             description: gr.getValue(FP + 'description') || '',
             category: gr.getValue(FP + 'category') || 'general',
             priority: parseInt(gr.getValue(FP + 'priority'), 10) || null,
+            can_write: gr.canWrite(),
+            can_delete: gr.canDelete(),
         };
+    },
+
+    /** Accepts 1-5 as a JSON number or a one-digit string; rejects true, [3], '0x3', ' 2 '. */
+    _isPriority: function(value) {
+        if (typeof value === 'number') return value % 1 === 0 && value >= 1 && value <= 5;
+        return typeof value === 'string' && /^[1-5]$/.test(value);
     },
 
     _has: function(data, key) {

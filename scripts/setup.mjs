@@ -28,17 +28,22 @@ const SKIP_FILES = new Set([
     join('docs', 'compatibility.md'),
     join('scripts', 'setup.mjs'),
 ]);
-const TEMPLATE_NAME = 'Example App';
+const TEMPLATE_SCOPE = 'x_snc_example';
+const TEMPLATE_REPO = 'jschuller/sn-app-template';
 const SCOPE_PATTERN = /^(x|sn)_[a-z0-9_]+$/;
 const MAX_SCOPE_LENGTH = 18;
+// The name lands in TS/JS string literals, HTML and an npm script, so keep it to characters
+// that need no escaping in any of them.
+const NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 ._()-]{0,79}$/;
 
 const HELP = `Usage: npm run setup -- --scope <scope> --name "<App Name>" [--dry-run] [--force]
 
   --scope    New application scope, e.g. x_1234_myapp (max ${MAX_SCOPE_LENGTH} characters).
              Use your instance's vendor prefix: glide.appcreator.company.code.
-  --name     Display name, e.g. "Asset Tracker".
+  --name     Display name, e.g. "Asset Tracker" (letters, digits, spaces, . _ ( ) -).
   --dry-run  Show what would change; write nothing.
-  --force    Run even if the git working tree has uncommitted changes.`;
+  --force    Run on a dirty working tree, or set up again an app that was already set up
+             (that creates a new app on the instance: new scopeId, new sys_ids).`;
 
 function fail(message) {
     console.error(`setup: ${message}`);
@@ -66,8 +71,11 @@ function parseOptions() {
     if (values.scope.length > MAX_SCOPE_LENGTH) {
         fail(`scope "${values.scope}" is longer than ${MAX_SCOPE_LENGTH} characters; the instance would truncate it.`);
     }
-    if (!values.name.trim()) fail('--name must not be empty.');
-    return { scope: values.scope, name: values.name.trim(), dryRun: values['dry-run'], force: values.force };
+    const name = values.name.trim();
+    if (!NAME_PATTERN.test(name)) {
+        fail(`name "${name}" may contain letters, digits, spaces and . _ ( ) - only (max 80 characters).`);
+    }
+    return { scope: values.scope, name, dryRun: values['dry-run'], force: values.force };
 }
 
 function ensureCleanTree(force) {
@@ -86,19 +94,37 @@ function git(...args) {
     return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 }
 
-/** Files git tracks or would track (ignored files stay untouched); a plain walk outside git. */
+/** Files git tracks or would track; outside git, a walk that honours simple .gitignore entries. */
 function textFiles() {
     let files;
     try {
         files = git('ls-files', '--cached', '--others', '--exclude-standard', '-z').split('\0').filter(Boolean);
     } catch {
-        files = [...walk(ROOT)].map((path) => relative(ROOT, path));
+        const ignored = gitignoreMatcher();
+        files = [...walk(ROOT)].map((path) => relative(ROOT, path).split(sep).join('/')).filter((file) => !ignored(file));
     }
     return files
         .filter((file) => TEXT_EXTENSIONS.test(file) && !SKIP_FILES.has(file))
         .filter((file) => !file.split(/[\\/]/).some((part) => SKIP_DIRS.has(part)))
         .filter((file) => existsSync(join(ROOT, file)))
         .map((file) => join(ROOT, file));
+}
+
+/** Supports the .gitignore forms this repository uses: `name`, `dir/`, `path/to/file`, `*` wildcards. */
+function gitignoreMatcher() {
+    const path = join(ROOT, '.gitignore');
+    if (!existsSync(path)) return () => false;
+    const patterns = readFileSync(path, 'utf8')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith('#') && !line.startsWith('!'))
+        .map((line) => {
+            const dirOnly = line.endsWith('/');
+            const body = line.replace(/^\/|\/$/g, '').replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*');
+            const anchored = line.replace(/\/$/, '').includes('/');
+            return new RegExp(`${anchored ? '^' : '(^|/)'}${body}${dirOnly ? '/' : '(/|$)'}`);
+        });
+    return (file) => patterns.some((pattern) => pattern.test(file));
 }
 
 function* walk(dir) {
@@ -109,6 +135,17 @@ function* walk(dir) {
         } else {
             yield path;
         }
+    }
+}
+
+/** owner/repo of a GitHub origin remote, or null. */
+function originRepo() {
+    try {
+        const url = git('remote', 'get-url', 'origin').trim();
+        const match = url.match(/github\.com[:/]([^/]+\/[^/]+?)(\.git)?$/);
+        return match && match[1] !== TEMPLATE_REPO ? match[1] : null;
+    } catch {
+        return null;
     }
 }
 
@@ -129,8 +166,14 @@ function main() {
     const configPath = join(ROOT, 'now.config.json');
     const config = readJson(configPath);
     const oldScope = config.scope;
-    if (oldScope === scope && config.name === name) fail(`already set up as ${scope} ("${name}").`);
+    const oldName = config.name;
+    if (oldScope !== TEMPLATE_SCOPE && !force) {
+        fail(`this app is already set up as ${oldScope} ("${oldName}"). Running setup again creates a new app on the ` +
+            'instance (new scopeId and sys_ids). Pass --force if that is what you want.');
+    }
+    if (oldScope === scope && oldName === name) fail(`already set up as ${scope} ("${name}").`);
     ensureCleanTree(force || dryRun);
+    const repo = originRepo();
     if (scope.startsWith('x_snc_')) {
         console.warn('setup: warning: x_snc_ is ServiceNow\'s own vendor prefix; most instances refuse to install it.');
     }
@@ -140,7 +183,8 @@ function main() {
     for (const file of textFiles()) {
         const before = readFileSync(file, 'utf8');
         let after = before.split(oldScope).join(scope);
-        if (relative(ROOT, file).startsWith(`src${sep}`)) after = after.split(TEMPLATE_NAME).join(name);
+        if (relative(ROOT, file).startsWith(`src${sep}`)) after = after.split(oldName).join(name);
+        if (repo) after = after.split(TEMPLATE_REPO).join(repo);
         if (after !== before) {
             changed.push(relative(ROOT, file));
             if (!dryRun) writeFileSync(file, after);
@@ -155,7 +199,7 @@ function main() {
     const pkg = readJson(pkgPath);
     Object.assign(pkg, { name: slug(name), version: '0.1.0', description: `${name} (ServiceNow scoped app)` });
     for (const [key, command] of Object.entries(pkg.scripts ?? {})) {
-        pkg.scripts[key] = command.split(TEMPLATE_NAME).join(name);
+        pkg.scripts[key] = command.split(oldName).join(name);
     }
     writeJson(pkgPath, pkg, dryRun);
 
@@ -179,6 +223,11 @@ function main() {
     console.log(`${prefix}Scope ${oldScope} -> ${scope}, name "${name}", new scopeId ${scopeId}`);
     console.log(`${prefix}Rewrote ${changed.length} files; reset package.json (0.1.0), CHANGELOG.md and src/fluent/generated/.`);
     for (const file of changed) console.log(`${prefix}  ${file}`);
+    if (repo) {
+        console.log(`${prefix}Pointed links to ${TEMPLATE_REPO} (badges, security reports) at ${repo}.`);
+    } else {
+        console.log(`${prefix}No GitHub origin found: update the ${TEMPLATE_REPO} links in README.md, SECURITY.md and .github/ yourself.`);
+    }
     if (dryRun) return;
     console.log(`
 Next steps:

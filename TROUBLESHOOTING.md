@@ -48,11 +48,22 @@ is false). Both are off on new PDIs.
 A route without its own `enforceAcl` gets the platform's "Scripted REST External Default" ACL, which overrides the API
 level. Set `enforceAcl: [exampleApiAcl]` on each route.
 
-## "Security restricted: Execute operation on API '…' from scope '…' was granted"
+## "Access to GlideRecord.update from scope … not allowed" (HTTP 500 or a failed ATF step)
 
-The app called a platform API from another scope while its runtime access tracking is permissive, so the platform
-allowed it and logged it. Where access is enforced the call fails. Declare it with a `CrossScopePrivilege`
-(`targetType: 'scriptable'`, `operation: 'execute'`, `targetScope: 'global'`) as in `src/fluent/privileges/`.
+The app runs with runtime access tracking **enforcing** (`now.config.json` → `accessControls.runtimeAccessTracking`),
+so every platform script API it calls must be declared. Add the API named in the message as a `CrossScopePrivilege`
+(`targetType: 'scriptable'`, `operation: 'execute'`, `targetScope: 'global'`) in
+`src/fluent/privileges/cross-scope-privileges.now.ts`, then deploy.
+
+**If the call is still refused after deploying:** the denied call made the platform create its own privilege record
+with status *requested*, and installing the app keeps that record instead of your *allowed* one. Approve it (System
+Applications → Application Cross-Scope Access, set Status to Allowed) or redeploy with `--reinstall` on a development
+instance.
+
+Prefer to find these before deploying to a strict instance: run the app's flows and the ATF suite with
+`runtimeAccessTracking: "permissive"` and check the log for `Security restricted: Execute operation on API '…' … was
+granted` — but note that permissive recording on Brazil Patch 0 missed some APIs (`GlideRecord.setValue`,
+`GlideRecord.update`) that enforcing then refused, so always finish with a run under enforcing.
 
 ## UI page is blank or stale
 

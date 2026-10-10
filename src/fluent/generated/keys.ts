@@ -17,6 +17,38 @@ declare global {
                         table: 'sys_scope_privilege'
                         id: '51b1c09d6bd849e39eaf4ad8201eacaf'
                     }
+                    csp_gliderecord_deleterecord: {
+                        table: 'sys_scope_privilege'
+                        id: 'dced7208ce9d4ed9b78707702d9f0b39'
+                    }
+                    csp_gliderecord_insert: {
+                        table: 'sys_scope_privilege'
+                        id: 'bf493e0c975743ba9ddde8a5d01a1a57'
+                    }
+                    csp_gliderecord_setvalue: {
+                        table: 'sys_scope_privilege'
+                        id: '5cde00497e7e409ab80d6d3fbf9fc66f'
+                    }
+                    csp_gliderecord_update: {
+                        table: 'sys_scope_privilege'
+                        id: 'fb988277a9a243c7b0e85ce8ff0d4413'
+                    }
+                    csp_restapirequest: {
+                        table: 'sys_scope_privilege'
+                        id: '2930e71f9142497791bc57155f8254b9'
+                    }
+                    csp_restapirequestbody: {
+                        table: 'sys_scope_privilege'
+                        id: '6bfcc8e59ca14486baf00c5b87c1e3eb'
+                    }
+                    csp_scriptableserviceresultbuilder_setbody: {
+                        table: 'sys_scope_privilege'
+                        id: '8bce0f640a1e47868273153bae305c8e'
+                    }
+                    csp_scriptableserviceresultbuilder_setstatus: {
+                        table: 'sys_scope_privilege'
+                        id: '1806c6e7fd9d410d92708e90087717b5'
+                    }
                     default_priority_rule: {
                         table: 'sys_script'
                         id: 'c6f6cca89eff4030bdc515f5ce56f0dd'

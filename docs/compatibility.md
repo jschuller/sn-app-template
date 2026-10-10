@@ -11,9 +11,9 @@ This page records what the template is verified against, what changed in the Ser
 | v1.0.0 | 4.13.6 | Australia, Zurich | Not verified. The app uses no Brazil-only features, so it is expected to work; report issues |
 
 "Verified" means: `npm run lint`, `npm run build:ci`, `npm run setup` on a scratch copy, `now-sdk install` over OAuth,
-`now-sdk cicd testsuite run` (both tests pass), a user without the app role getting HTTP 403 from the Scripted REST
+`now-sdk cicd testsuite run` (both tests pass) with runtime access enforcing, a user without the app role getting HTTP 403 from the Scripted REST
 API and the REST Table API, and every Scripted REST route returning its documented status codes.
-The UI page was not exercised in a browser for v1.0.0.
+The UI page was built and linted but not exercised in a browser for v1.0.0.
 
 ## Findings from the Brazil verification
 
@@ -31,10 +31,16 @@ These came out of installing the app on a Brazil Patch 0 instance and are encode
    targeting the app's own table "to prevent REST 403". Removing them changed nothing: the REST Table API still served
    records to an authorized user, and still returned 403 to a user without the app role. Table API access is governed
    by `allowWebServiceAccess` and the ACLs.
-5. **Platform APIs used from the scope do need privileges where runtime access is enforced.** With the app's runtime
-   access tracking left permissive, the platform logged
-   `Security restricted: Execute operation on API 'GlideRecordSecure.getValue' … was granted` and allowed the call.
-   The template declares that privilege so the app also works where access is enforced.
+5. **Platform script APIs do need privileges when runtime access is enforced.** The template now sets
+   `accessControls.runtimeAccessTracking: "enforcing"` (the SDK default is permissive). Under enforcing, each platform
+   API the code calls — `RESTAPIRequest`, `RESTAPIRequestBody`, `ScriptableServiceResultBuilder.setStatus`/`setBody`,
+   `GlideRecordSecure.getValue`, `GlideRecord.setValue`/`insert`/`update`/`deleteRecord` — must be declared as a
+   `CrossScopePrivilege`; anything missing fails with `Access to <API> from scope … not allowed`. The list was built by
+   running every REST route and the ATF suite under enforcing until there were no denials.
+   - Permissive mode's automatic recording is not a complete inventory: it recorded seven APIs but missed
+     `GlideRecord.setValue` and `GlideRecord.update`.
+   - A denied call under enforcing creates a *requested* privilege record, and a later install keeps it rather than
+     the declared *allowed* one; it has to be approved, or the app reinstalled.
 6. **ATF via `now-sdk cicd` needs two properties.** `sn_atf.runner.enabled` and then `sn_atf.schedule.enabled` must be
    `true` (a business rule refuses the second while the first is false). Fresh PDIs ship with both off.
 

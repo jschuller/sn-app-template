@@ -5,6 +5,7 @@
  * sends the session's CSRF token (window.g_ck) as X-UserToken.
  */
 const BASE_URL = '/api/x_snc_example/example_api';
+export const PAGE_SIZE = 50;
 
 async function request(path, { method = 'GET', body } = {}) {
     if (!window.g_ck) {
@@ -30,7 +31,7 @@ async function request(path, { method = 'GET', body } = {}) {
 }
 
 export const ApiService = {
-    listItems: () => request('/items'),
+    listItems: (offset = 0) => request(`/items?limit=${PAGE_SIZE}&offset=${offset}`),
     createItem: (item) => request('/items', { method: 'POST', body: item }),
     updateItem: (sysId, changes) =>
         request(`/items/${encodeURIComponent(sysId)}`, { method: 'PATCH', body: changes }),

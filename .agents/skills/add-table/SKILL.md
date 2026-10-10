@@ -19,7 +19,8 @@ changed it — read `scope` from `now.config.json`).
 2. **ACLs** — in `src/fluent/acls/`, one `Acl()` per operation (`read`, `create`, `write`, `delete`), `type: 'record'`,
    `table: 'x_snc_example_widget'`, `roles: [exampleUserRole]` or `[exampleAdminRole]` imported from `../roles/app-roles.now`.
 3. **Service** — add methods to `src/server/AppService.server.js` (or a new Script Include, see AGENTS.md). Use
-   `GlideRecordSecure`, validate input, return `{ status, body }` like the existing item methods.
+   `GlideRecordSecure`, validate input, return `{ status, body }` like the existing item methods. Any platform API the
+   template does not already call needs a `CrossScopePrivilege` (runtime access is enforcing; see AGENTS.md).
 4. **REST routes** — add routes to `src/fluent/rest-api/app-api.now.ts` (`/widgets`, `/widgets/{sys_id}`), each with its
    own `$id` and `enforceAcl: [exampleApiAcl]`; scripts only call the service and `svc.send(response, result)`.
 5. **ATF test** — add a `Test()` to `src/fluent/tests/` that inserts a record, validates it, exercises the service

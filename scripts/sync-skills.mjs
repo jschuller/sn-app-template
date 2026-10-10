@@ -22,21 +22,33 @@ function files(dir, base = dir) {
     });
 }
 
-function inSync() {
-    const source = files(SOURCE).sort();
-    const target = files(TARGET).sort();
+// Only skills that exist in .agents/skills are managed; Claude-only skills in .claude/skills are left alone.
+const skills = existsSync(SOURCE) ? readdirSync(SOURCE).filter((name) => statSync(join(SOURCE, name)).isDirectory()) : [];
+if (skills.length === 0) {
+    console.error('sync-skills: no skills found in .agents/skills');
+    process.exit(1);
+}
+
+function inSync(skill) {
+    const source = files(join(SOURCE, skill)).sort();
+    const target = files(join(TARGET, skill)).sort();
     if (source.join('\n') !== target.join('\n')) return false;
-    return source.every((file) => readFileSync(join(SOURCE, file)).equals(readFileSync(join(TARGET, file))));
+    return source.every((file) =>
+        readFileSync(join(SOURCE, skill, file)).equals(readFileSync(join(TARGET, skill, file))),
+    );
 }
 
 if (process.argv.includes('--check')) {
-    if (!inSync()) {
-        console.error('sync-skills: .claude/skills differs from .agents/skills. Run `npm run sync:skills` and commit.');
+    const stale = skills.filter((skill) => !inSync(skill));
+    if (stale.length) {
+        console.error(`sync-skills: .claude/skills out of date for: ${stale.join(', ')}. Run \`npm run sync:skills\` and commit.`);
         process.exit(1);
     }
-    console.log('sync-skills: in sync');
+    console.log(`sync-skills: ${skills.length} skills in sync`);
 } else {
-    rmSync(TARGET, { recursive: true, force: true });
-    cpSync(SOURCE, TARGET, { recursive: true });
-    console.log(`sync-skills: copied ${files(SOURCE).length} files to .claude/skills`);
+    for (const skill of skills) {
+        rmSync(join(TARGET, skill), { recursive: true, force: true });
+        cpSync(join(SOURCE, skill), join(TARGET, skill), { recursive: true });
+    }
+    console.log(`sync-skills: copied ${skills.join(', ')} to .claude/skills`);
 }

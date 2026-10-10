@@ -6,12 +6,17 @@ const EMPTY = { name: '', description: '', category: 'general' };
 export function ItemForm({ onCreate }) {
     const [draft, setDraft] = React.useState(EMPTY);
     const [saving, setSaving] = React.useState(false);
+    const [nameError, setNameError] = React.useState('');
 
     const update = (field) => (event) => setDraft({ ...draft, [field]: event.target.value });
 
     async function handleSubmit(event) {
         event.preventDefault();
-        if (!draft.name.trim()) return;
+        if (!draft.name.trim()) {
+            setNameError('Enter a name.');
+            return;
+        }
+        setNameError('');
         setSaving(true);
         const created = await onCreate(draft);
         setSaving(false);
@@ -24,7 +29,15 @@ export function ItemForm({ onCreate }) {
             <form className="item-form" onSubmit={handleSubmit}>
                 <label className="item-form__field">
                     Name
-                    <input value={draft.name} onChange={update('name')} maxLength={200} required />
+                    <input
+                        value={draft.name}
+                        onChange={update('name')}
+                        maxLength={200}
+                        required
+                        aria-invalid={Boolean(nameError)}
+                        aria-describedby={nameError ? 'name-error' : undefined}
+                    />
+                    {nameError && <span id="name-error" className="item-form__error">{nameError}</span>}
                 </label>
                 <label className="item-form__field item-form__field--wide">
                     Description

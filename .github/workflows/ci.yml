@@ -9,9 +9,11 @@ on:
 permissions:
   contents: read
 
+# Superseded pull-request runs are cancelled; runs on main always finish, so an
+# instance deploy is never interrupted half-way.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:

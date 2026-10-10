@@ -20,7 +20,8 @@ Do not open a public issue.
 ## What the template does
 
 - **Least privilege by default:** REST routes require the app's user role; data access uses `GlideRecordSecure`, so
-  record ACLs apply to every caller; writes and deletes need the admin role; other scopes may only read the table.
+  record ACLs apply to every caller; writes and deletes need the admin role; other scopes may only read the table; the
+  app runs with runtime access tracking *enforcing* and declares each platform API it uses.
 - **CSRF:** the UI page sends the session token (`X-UserToken`) on every request.
 - **Input validation:** the Script Include validates types, lengths and choice values before writing.
 - **No secrets in source:** credentials stay in the OS keychain (`now-sdk auth`) or CI secrets; example MCP configs

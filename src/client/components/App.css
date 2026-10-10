@@ -33,6 +33,12 @@ body {
 }
 .app-button:disabled { opacity: 0.6; cursor: default; }
 .app-button--danger { background: var(--now-color-alert-critical-2, #c62828); }
+.app-button--secondary {
+    margin-top: 16px;
+    background: transparent;
+    color: var(--now-color-interactive-primary, #0f62fe);
+    border: 1px solid currentColor;
+}
 .app-button--bare { background: transparent; color: inherit; text-decoration: underline; padding: 0; }
 .app-button:focus-visible, input:focus-visible, select:focus-visible {
     outline: 2px solid var(--now-color-focus-ring, #0f62fe);
@@ -42,6 +48,7 @@ body {
 .item-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .item-form__field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; font-size: 0.875rem; }
 .item-form__field--wide { flex: 2; }
+.item-form__error { color: var(--now-color-alert-critical-3, #8e1d14); font-size: 0.8rem; }
 .item-form input, .item-form select, .item-table select {
     padding: 8px 10px; border-radius: 6px; font: inherit;
     border: 1px solid var(--now-color-border-primary, #c3c8cd);
