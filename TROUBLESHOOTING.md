@@ -1,57 +1,75 @@
 # Troubleshooting
 
-Common issues when developing with this template. Each was discovered during production deployments and is encoded in the template to prevent recurrence.
+Problems seen while building, installing and testing apps from this template. Most were reproduced on a Brazil
+Patch 0 instance with SDK 4.13.6; see [docs/compatibility.md](docs/compatibility.md).
 
-## REST Table API returns 403
+## Install fails: "Unable to install third party application"
 
-**Symptom:** Valid credentials and ACLs, but `GET /api/now/table/x_snc_example_item` returns 403.
+**Cause:** the app's scope uses another vendor's prefix. Instances install `x_<vendor>_…` apps only when `<vendor>` is
+their own company code (system property `glide.appcreator.company.code`), so the template's default scope is refused.
 
-**Cause:** Missing `CrossScopePrivilege` records. Scoped app tables require explicit cross-scope access grants for the REST Table API (which operates from global scope).
+**Fix:** `npm run setup -- --scope x_<your vendor>_<app> --name "<App Name>"`, then build and deploy again.
 
-**Fix:** Ensure `src/fluent/privileges/cross-scope-privileges.now.ts` has 4 entries per table (read, create, write, delete) and that the table definition includes `allowWebServiceAccess: true`.
+## Install fails: "Could not determine app installation status"
 
-## Blank BYOUI page
+Install runs asynchronously and polls the instance. Check the execution tracker link the CLI prints (or
+`sys_execution_tracker` on the instance). If the upload succeeded but polling failed, retry once with
+`npm run deploy -- --auth <alias> --reinstall`. `--reinstall` uninstalls first, which deletes anything changed on the
+instance that is not in source.
 
-**Symptom:** Navigating to `x_snc_example_app.do` shows a blank page or React doesn't mount.
+## `now-sdk auth` or install fails with 401
 
-**Causes:**
-- Missing `<sdk:now-ux-globals></sdk:now-ux-globals>` in `src/client/index.html` — this tag injects ServiceNow globals (`window.g_ck`, session context) that React needs.
-- JSX not compiled — run `npm run build` before `now-sdk install`.
-- UiPage missing `direct: true` in `src/fluent/ui-pages/app-page.now.ts`.
+1. Prefer OAuth: `npx now-sdk auth --add https://<instance>.service-now.com --type oauth --alias <alias>`.
+2. Basic auth is restricted on new instances: the user needs `snc_basic_auth_api_access`, a valid MFA code (the CLI
+   prompts for a TOTP code), or web-service-only access.
+3. Changing the user's password revokes OAuth refresh tokens: run `auth --add` again.
+4. Personal Developer Instances hibernate after inactivity. Wake the instance from developer.servicenow.com; until then
+   APIs answer with an HTML login page.
+5. Use `npx now-sdk …` (the project's pinned SDK), not an older global `now-sdk`.
 
-## CSRF token errors (401/403 on POST/PATCH/DELETE)
+## ATF: "Scheduled test/suite execution is disabled"
 
-**Symptom:** GET requests work but mutations fail with 401 or 403.
+`npm run test:instance` drives the CI/CD API, which runs suites as scheduled executions. Set the system properties
+`sn_atf.runner.enabled` and then `sn_atf.schedule.enabled` to `true` (a business rule refuses the second while the first
+is false). Both are off on new PDIs.
 
-**Cause:** Missing `X-UserToken` header. ServiceNow requires the CSRF token for state-changing operations.
+## REST API returns 403
 
-**Fix:** Include `'X-UserToken': window.g_ck` in all `fetch()` headers. The `g_ck` value is injected by `<sdk:now-ux-globals>`. See `src/client/services/ApiService.js` for the pattern.
+- **For the app's Scripted REST API** (`/api/<scope>/example_api/items`): the caller lacks the `<scope>.user` role, which
+  the REST endpoint ACL requires on every route. Create needs the user role; update and delete need admin.
+- **For the REST Table API** (`/api/now/table/<scope>_item`): the table needs `allowWebServiceAccess: true` and the
+  caller must pass the table's read ACL. No `CrossScopePrivilege` is involved — earlier template versions said
+  otherwise; that was disproved on Brazil.
+- **Only mutations fail from the UI page:** the request lacks `X-UserToken: window.g_ck`. `ApiService.js` sends it on
+  every request; keep `<sdk:now-ux-globals>` in `index.html`, which provides `g_ck`.
 
-**Important:** `GlideAjax` does **not** work in BYOUI pages — it fails silently. Always use `fetch()` to your Scripted REST API.
+## A route ignores the ACL set on the RestApi
 
-## Script Include not found at runtime
+A route without its own `enforceAcl` gets the platform's "Scripted REST External Default" ACL, which overrides the API
+level. Set `enforceAcl: [exampleApiAcl]` on each route.
 
-**Symptom:** REST API route throws "AppService is not defined" or similar.
+## "Security restricted: Execute operation on API '…' from scope '…' was granted"
 
-**Cause:** Script Include instantiation uses the scoped API name, not the class name.
+The app called a platform API from another scope while its runtime access tracking is permissive, so the platform
+allowed it and logged it. Where access is enforced the call fails. Declare it with a `CrossScopePrivilege`
+(`targetType: 'scriptable'`, `operation: 'execute'`, `targetScope: 'global'`) as in `src/fluent/privileges/`.
 
-**Fix:** Use `var svc = new x_snc_example.AppService();` (with scope prefix), not `new AppService()`.
+## UI page is blank or stale
 
-## Scope prefix mismatch after set-scope.sh
+- Keep `<sdk:now-ux-globals></sdk:now-ux-globals>` in `src/client/index.html` (theming and `g_ck`).
+- Keep `?uxpcb=$[UxFrameworkScriptables.getFlushTimestamp()]` on the script tag, or browsers may serve an old bundle.
+- `UiPage` needs `direct: true` and an `endpoint` that starts with `<scope>_`.
+- Do not use GlideAjax in UI pages; it fails silently. Call REST with `fetch()`.
+- Check the browser console; the page reports API errors in an alert at the top.
 
-**Symptom:** Build succeeds but deploy creates duplicate records or fails.
+## Build errors in `.now.ts` files
 
-**Fix:** After running `set-scope.sh`, also update:
-1. `now.config.json` → `scope` field
-2. `now.config.json` → `scopeId` (sys_id from the target instance's `sys_app` record)
-3. Delete `src/fluent/generated/` and rebuild — the key registry maps to the old scope.
+- `Unsupported statement in Fluent source file` / `Unsupported variable initializer`: Fluent files may only contain SDK
+  calls and `export const x = SdkCall(...)`. Export the constant or inline the call.
+- `Failed to parse property`: properties must be literals — no string concatenation (`'a' + 'b'`) or computed values.
+- `--frozenKeys` failure in CI: run `npm run build` locally and commit `src/fluent/generated/keys.ts`.
 
-## now-sdk install fails with auth error
+## "AppService is not defined" at runtime
 
-**Symptom:** `Error: Authentication failed` or `401 Unauthorized`.
-
-**Fix:**
-1. Re-run `now-sdk auth --add YOUR_ALIAS --type basic`
-2. Verify the instance URL doesn't have a trailing slash
-3. Ensure the user has the `admin` role on the target instance
-4. For PDI instances, check that the instance is awake (they hibernate after inactivity)
+Script Includes are called by API name: `new x_snc_example.AppService()`. Each Script Include file must define its own
+constants (`var FP = 'x_snc_example_';`); globals from one are not visible in another.

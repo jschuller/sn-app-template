@@ -1,173 +1,181 @@
-<!-- template: servicenow-scoped-app | sdk: @servicenow/sdk@4.4.0 | scope-prefix: x_snc_example | layers: fluent|server|client | deploy: now-sdk install -->
-
 <p align="center">
-  <img src="docs/hero.png" alt="ServiceNow App Template — AI-Assisted Development" width="100%">
+  <img src="docs/hero.jpg" alt="ServiceNow App Template — AI-assisted development" width="100%">
 </p>
 
 <h1 align="center">ServiceNow App Template</h1>
 
 <p align="center">
-  <a href="https://img.shields.io/badge/ServiceNow_SDK-4.4.0-005E4D"><img src="https://img.shields.io/badge/ServiceNow_SDK-4.4.0-005E4D" alt="SDK"></a>
-  <a href="https://img.shields.io/badge/React-18.2-00A893"><img src="https://img.shields.io/badge/React-18.2-00A893" alt="React"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
-  <a href="https://claude.com/claude-code"><img src="https://img.shields.io/badge/Claude_Code-ready-5436DA" alt="Claude Code"></a>
+  <a href="https://github.com/jschuller/sn-app-template/releases/latest"><img src="https://img.shields.io/github/v/release/jschuller/sn-app-template" alt="Release"></a>
+  <a href="https://github.com/jschuller/sn-app-template/actions/workflows/ci.yml"><img src="https://github.com/jschuller/sn-app-template/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/@servicenow/sdk"><img src="https://img.shields.io/badge/ServiceNow_SDK-4.13.6-005E4D" alt="ServiceNow SDK 4.13.6"></a>
+  <a href="docs/compatibility.md"><img src="https://img.shields.io/badge/verified-Brazil-00A893" alt="Verified on Brazil"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
 </p>
 
 <p align="center">
-  AI-assisted development template for ServiceNow scoped apps.<br>
-  <strong>Claude Code + now-sdk</strong> — one command deploys everything.
+  A starting point for ServiceNow scoped apps built from source with the ServiceNow SDK (Fluent)<br>
+  and an AI coding agent — <strong>Claude Code, Codex, Pi</strong> or any agent that reads <code>AGENTS.md</code>.
 </p>
 
 ---
 
-## Patterns Included
+The template is a small, complete app — a table, a secured REST API, a React UI page, ACLs, roles, a business rule and
+ATF tests — plus the instructions and skills that let a coding agent extend it the right way. Everything deploys with
+one command, and every pattern in it was verified on a ServiceNow Brazil instance.
 
-`CSRF Protection` · `Cross-Scope Privileges` · `Now.include() Bundling` · `BYOUI React Pages` · `Role-Based ACLs` · `Seed Data` · `Scripted REST API` · `Business Rules` · `Application Menu` · `Scope Prefix Helpers`
+## Quick start
 
-## Quick Start
+Prerequisites: Node.js 20.18+ (24 recommended, see `.nvmrc`), a ServiceNow instance you may install apps on (a free
+[Personal Developer Instance](https://developer.servicenow.com) works), and its vendor prefix — the
+`glide.appcreator.company.code` system property (on a PDI: the company code shown in the developer portal).
 
-1. Click **"Use this template"** on GitHub to create your repo
-2. Clone and configure:
-```bash
-git clone https://github.com/YOUR_USERNAME/your-app.git
-cd your-app
-cp .env.example .env              # Fill in instance credentials
-cp .mcp.json.example .mcp.json    # Configure MCP for Claude Code
-npm install
-```
-3. Set up instance auth:
-```bash
-now-sdk auth --add YOUR_INSTANCE --type basic
-```
-4. Update `now.config.json` with your instance's scopeId (sys_id from sys_app record)
-5. Build and deploy:
-```bash
-npm run build
-now-sdk install --auth YOUR_ALIAS
-```
-6. Open `https://YOUR_INSTANCE.service-now.com/x_snc_example_app.do`
+1. Click **Use this template** on GitHub, then clone your new repository.
+2. Install and make the app yours. The scope **must** use your instance's vendor prefix — instances refuse to install
+   apps with another vendor's prefix, including the template's default scope:
+   ```bash
+   npm ci
+   npm run setup -- --scope x_<vendor>_<app> --name "My App"   # e.g. x_1234_assets "Asset Tracker"
+   ```
+   `setup` renames the scope everywhere, generates a new `scopeId`, resets the version to 0.1.0 and deletes the
+   template's record keys so your app gets its own sys_ids.
+3. Authenticate (OAuth is recommended; credentials stay in your OS keychain):
+   ```bash
+   npx now-sdk auth --add https://<instance>.service-now.com --type oauth --alias dev
+   ```
+4. Build, deploy and test:
+   ```bash
+   npm run build                          # commit the new src/fluent/generated/keys.ts
+   npm run deploy -- --auth dev
+   npm run test:instance -- --auth dev    # ATF suite; see TROUBLESHOOTING if it reports "disabled"
+   ```
+5. Open `https://<instance>.service-now.com/<scope>_app.do`, or find the app under its name in the navigator.
 
-## What Gets Deployed
+## What gets deployed
 
-| Component | Count | Description |
-|-----------|-------|-------------|
-| Table | 1 | Example Item (5 columns) |
-| Script Include | 1 | AppService (CRUD operations) |
-| REST API | 4 routes | List, Create, Update, Delete |
-| BYOUI Page | 1 | React app with CRUD UI |
-| ACLs | 4 | Read, Write, Create, Delete |
-| Roles | 2 | admin, user |
-| Business Rule | 1 | Default category |
-| Cross-scope privileges | 4 | Prevents REST 403 |
-| Seed records | 3 | Sample items |
-| ATF Test | 1 | Table, rule, and service validation |
+| Component | Count | Details |
+|---|---|---|
+| Table | 1 | Example Item: name, description, category (choice), priority |
+| Roles | 2 | `x_snc_example.user`; `x_snc_example.admin` contains user |
+| Record ACLs | 4 | read and create for user; write and delete for admin |
+| REST endpoint ACL | 1 | Every API route requires the user role |
+| Scripted REST API | 4 routes | List (paged), create, update, delete — validated, status codes 200/201/204/400/403/404 |
+| Script Include | 1 | `AppService`: CRUD through `GlideRecordSecure` so ACLs apply to the caller |
+| Business rule | 1 | Derives a default priority from the category |
+| UI page | 1 | React (BYOUI): list, create, inline edit, delete |
+| Application menu | 1 menu, 2 modules | UI page and list view, visible to the user role |
+| Cross-scope privilege | 1 | `GlideRecordSecure.getValue` (needed where runtime access is enforced) |
+| ATF tests | 2 in 1 suite | Business rule and service; ACLs deny a user without roles |
+| Demo records | 3 | Loaded as demo data (`--demoData false` skips them) |
 
 ## Architecture
 
-Three source layers, one deploy command:
-
 ```mermaid
-graph TD
-    subgraph FLUENT["src/fluent — Metadata-as-Code"]
-        TBL["Tables + ACLs + Roles"]
-        API["REST API Routes"]
-        SI["Script Include Decl"]
-        UI["UI Page Decl"]
+graph LR
+    subgraph CLIENT["src/client — React UI page"]
+        PAGE["index.html → app.jsx"]
+        UI["components/*.jsx"]
+        CLI["services/ApiService.js"]
     end
-    subgraph SERVER["src/server — Business Logic"]
+    subgraph FLUENT["src/fluent — metadata as code"]
+        REST["RestApi + REST ACL"]
+        DATA["Table · Roles · ACLs · Business rule"]
+        DECL["ScriptInclude · UiPage · Menu · Tests"]
+    end
+    subgraph SERVER["src/server — Script Include"]
         SVC["AppService.server.js"]
     end
-    subgraph CLIENT["src/client — React BYOUI"]
-        HTML["index.html"]
-        JSX["App.jsx"]
-        APISVC["ApiService.js"]
-    end
 
-    SI -->|"Now.include()"| SVC
-    UI -->|"HTML import"| HTML
-    HTML -->|"script tag"| JSX
-    JSX --> APISVC
-    APISVC -->|"fetch() + g_ck"| API
-    API -->|"new AppService()"| SVC
-    TBL -.->|"schema for"| API
+    PAGE --> UI --> CLI
+    CLI -->|"fetch() + X-UserToken"| REST
+    REST -->|"new x_snc_example.AppService()"| SVC
+    SVC -->|"GlideRecordSecure"| DATA
+    DECL -.->|"Now.include()"| SVC
+    DECL -.->|"html import"| PAGE
 ```
-
-## Development with Claude Code
-
-This template includes a comprehensive `CLAUDE.md` that teaches Claude Code how to:
-- Add new tables with proper ACLs and cross-scope privileges
-- Add Script Includes with the `Now.include()` pattern
-- Add BYOUI React pages with `fetch()` + `g_ck` CSRF protection
-- Add REST API endpoints
-- Handle secrets with `password2` properties
-
-Start Claude Code in this directory and ask it to extend the app.
-
-> **Other AI tools:** A `.github/copilot-instructions.md` is included with the critical patterns for GitHub Copilot and other AI coding assistants.
-
-## Customizing the Scope
-
-Change the scope prefix from `x_snc_example` to your app name:
-```bash
-./set-scope.sh x_XXXX_myapp
-```
-This updates all table names, field names, API paths, and file references across the project.
-
-## Connect ServiceNow IDE (optional)
-
-After deploying via now-sdk, connect the IDE for browser-based editing and Build Agent access:
-
-1. Open `https://YOUR_INSTANCE.service-now.com/sn_glider_app/ide`
-2. Click **Create Workspace** → name it (e.g., "Example App")
-3. Click **Clone Git Repository**
-4. Enter: `https://github.com/YOUR_USERNAME/your-app.git` + GitHub PAT
-5. The IDE connects to the already-deployed app — no conflicts
-
-The workspace gives you: file editing in the browser, Build Agent (10 prompts/month on PDI), and IDE git integration for pushing changes back to GitHub.
-
-## Project Structure
 
 ```
 src/
-├── client/                    # BYOUI React pages
-│   ├── index.html             # Entry point with <sdk:now-ux-globals>
-│   ├── app.jsx                # React entry
-│   ├── components/App.jsx     # CRUD component
-│   └── services/ApiService.js # fetch() REST client
-├── server/                    # Script Includes
-│   └── AppService.server.js   # Business logic
-└── fluent/                    # SDK Fluent metadata
-    ├── tables/                # Table definitions
-    ├── acls/                  # Access controls
-    ├── roles/                 # Role definitions
-    ├── script-includes/       # SI declarations (Now.include pattern)
-    ├── rest-api/              # Scripted REST endpoints
-    ├── privileges/            # Cross-scope privileges
-    ├── ui-pages/              # UiPage with direct:true
-    ├── business-rules/        # Before/after rules
-    ├── navigation/            # App menu
-    ├── records/               # Seed data (Record API)
-    ├── tests/                 # ATF test definitions
-    └── index.now.ts           # Barrel exports
+├── client/                      React UI page, bundled by the SDK
+│   ├── index.html               <sdk:now-ux-globals>, -polaris, uxpcb cache-buster
+│   ├── app.jsx                  React entry
+│   ├── components/              App, ItemForm, ItemTable, ItemRow (+ App.css, Horizon theme variables)
+│   └── services/ApiService.js   fetch() client for the Scripted REST API
+├── server/AppService.server.js  Validated, ACL-enforced CRUD
+└── fluent/                      One folder per metadata type; index.now.ts imports them all
+    ├── tables/  roles/  acls/  business-rules/  script-includes/  rest-api/
+    ├── privileges/  ui-pages/  navigation/  records/  tests/
+    └── generated/keys.ts        Record keys → sys_ids (generated; commit it)
+scripts/setup.mjs                Make the template your app (scope, scopeId, name)
+scripts/sync-skills.mjs          Mirror .agents/skills → .claude/skills
 ```
 
-## Troubleshooting
+## AI coding agents
 
-See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues (REST 403, blank BYOUI pages, CSRF errors).
+The repository speaks the conventions the major coding agents read:
 
-## Related Projects
+| File | Read by | Purpose |
+|---|---|---|
+| `AGENTS.md` | Codex, Pi, Copilot, Cursor, Gemini CLI, … | Architecture, commands, rules, recipes |
+| `CLAUDE.md` | Claude Code | Imports `AGENTS.md`, adds Claude-specific notes |
+| `.agents/skills/` | Codex, Pi, other [Agent Skills](https://agentskills.io) clients | `add-table`, `deploy-and-verify` |
+| `.claude/skills/` | Claude Code | Copies of the above (`npm run sync:skills`; CI checks they match) |
+| `.mcp.json.example`, `.pi/mcp.json.example` | Claude Code, Pi | Optional read-only instance access through [mcp-server-servicenow](https://github.com/jschuller/mcp-server-servicenow) |
 
-- **[mcp-server-servicenow](https://github.com/jschuller/mcp-server-servicenow)** — MCP server with 18 tools for ServiceNow table, CMDB, system, and update set operations. Pairs with this template for AI-assisted development.
-- **[project-virgil](https://github.com/leojacinto/project-virgil)** — Interesting now-sdk example patterns.
-- **[ServiceNow SDK Examples](https://github.com/ServiceNow/sdk-examples)** — Official SDK samples from ServiceNow.
+The agents' Fluent knowledge comes from the SDK itself: `npx now-sdk explain <topic>` serves documentation that
+matches the installed SDK version, so it does not drift the way copied docs do. ServiceNow also publishes an official
+agent skill for the SDK ([ServiceNow/sdk](https://github.com/ServiceNow/sdk)):
 
-## Built With
+- **Claude Code:** `/plugin install servicenow-sdk@claude-plugins-official`
+- **Codex:** `$skill-installer https://github.com/ServiceNow/sdk/tree/master/skills/now-sdk`
+- **Pi:** copy `skills/now-sdk/` from that repository into `.agents/skills/` (or `~/.agents/skills/`)
 
-- [ServiceNow SDK (Fluent)](https://www.servicenow.com/docs/r/yokohama/application-development/servicenow-sdk/servicenow-fluent-api-reference.html) · [React 18](https://react.dev) · [Claude Code](https://claude.com/claude-code)
+For MCP access, copy the example for your agent, export `SERVICENOW_INSTANCE_URL`, `SERVICENOW_USERNAME` and
+`SERVICENOW_PASSWORD` (a dedicated integration user, not `admin`), and keep `SERVICENOW_READ_ONLY=true` unless a task
+needs writes. Codex reads MCP servers from `~/.codex/config.toml`:
 
-## Contributing
+```toml
+[mcp_servers.servicenow]
+command = "uvx"
+args = ["mcp-server-servicenow==0.7.0"]
+env = { SERVICENOW_AUTH_TYPE = "basic", SERVICENOW_READ_ONLY = "true" }
+env_vars = ["SERVICENOW_INSTANCE_URL", "SERVICENOW_USERNAME", "SERVICENOW_PASSWORD"]
+```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+## Commands
+
+| Command | What it does |
+|---|---|
+| `npm run setup -- --scope … --name …` | Turn the template into your app (once) |
+| `npm run lint` | ESLint for the UI, the Script Include and the scripts |
+| `npm run build` | Compile Fluent and bundle the UI into `dist/` |
+| `npm run build:ci` | Build with `--frozenKeys` (fails if `keys.ts` is stale) |
+| `npm run deploy -- --auth <alias>` | Install on an instance |
+| `npm run test:instance -- --auth <alias>` | Run the ATF suite on the instance |
+| `npm run pack` | Package the app as an installable zip in `target/` |
+
+## CI deploy (optional)
+
+`.github/workflows/ci.yml` lints, builds with frozen keys and packages on every push and pull request. Its
+`instance-test` job also deploys to a **test** instance and runs the ATF suite once you add the repository variable
+`SN_SDK_INSTANCE_URL` and the secrets `SN_SDK_OAUTH_CLIENT_ID` / `SN_SDK_OAUTH_CLIENT_SECRET` (OAuth client
+credentials; setup in `npx now-sdk explain ci-integration`). Promote to production through the Application Repository
+(`now-sdk cicd publish` / `cicd install`), not with `now-sdk install`.
+
+## Documentation
+
+- [AGENTS.md](AGENTS.md) — how the app is built and the rules for changing it
+- [docs/compatibility.md](docs/compatibility.md) — verified releases, Brazil notes, SDK upgrade steps
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — install, auth, REST, UI page and ATF problems
+- [CHANGELOG.md](CHANGELOG.md) · [RELEASING.md](RELEASING.md) · [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md)
+- ServiceNow: [ServiceNow SDK](https://www.servicenow.com/docs/csh?topicname=servicenow-sdk-landing&version=latest), [SDK docs site](https://servicenow.github.io/sdk/),
+  [SDK releases](https://github.com/ServiceNow/sdk/releases), [SDK examples](https://github.com/ServiceNow/sdk-examples),
+  [Brazil release notes](https://www.servicenow.com/docs/r/release-notes/rn-learn-landing-page.html)
+
+## Related projects
+
+- [mcp-server-servicenow](https://github.com/jschuller/mcp-server-servicenow) — MCP server for ServiceNow (19 tools) with
+  read-only mode and table allow/deny lists.
+- [ServiceNow/sdk-examples](https://github.com/ServiceNow/sdk-examples) — official samples for individual SDK features.
 
 ## License
 
