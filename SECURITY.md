@@ -32,6 +32,23 @@ Do not open a public issue.
 
 ## Known advisories in development tooling
 
-`npm audit` reports advisories in packages that `@servicenow/sdk` depends on (for example `undici` inside the SDK CLI).
-They affect the developer's machine and CI while running the SDK, not the app installed on the instance, and are fixed by
-SDK updates. Dependabot proposes those updates as they ship.
+`npm audit` and the repository's Dependabot alerts list advisories, some rated high or critical, in packages that
+`@servicenow/sdk` depends on: for example `handlebars`, `fastify`, `js-yaml`, `joi` and `undici`. They are all
+*development* dependencies of the SDK's own tooling (UI bundling and its development server, templating, SBOM
+generation, HTTP calls to the instance). They run on the developer's machine and in CI while the SDK runs. None of them
+is part of the app installed on the instance: the package `now-sdk pack` builds contains only the app's metadata, its
+server scripts and the UI bundle (React and the code in `src/client`).
+
+How the template handles them:
+
+- **Fixed by SDK updates.** The SDK is pinned to an exact version, so its dependencies move only when ServiceNow
+  publishes a new SDK. Dependabot opens one grouped pull request for the `@servicenow/*` packages when it does; such a
+  pull request is merged after the build and a test-instance deployment pass, like any SDK upgrade
+  ([docs/compatibility.md](docs/compatibility.md)).
+- **No `overrides` by default.** Forcing versions the SDK was not released with can break builds and installs in ways
+  that are hard to trace. If a critical advisory is still open after the next SDK release, patched versions may be
+  pinned through npm `overrides` in a release that is verified on an instance first.
+- **Reducing exposure meanwhile:** run the SDK only on projects and instances you trust.
+
+An advisory in a package that does reach the instance (React, or code in `src/`) is a vulnerability in this template:
+report it as described above.

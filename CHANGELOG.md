@@ -11,6 +11,10 @@ version needs manual work to adopt it.
   delete (secured record steps and `AppService` 403s, `can_write`/`can_delete` false), and a user with only
   `x_snc_example.admin` may update (200) and delete (204, then 404), with `can_write`/`can_delete` true.
 
+### Changed
+- `SECURITY.md` explains the advisories reported in the SDK's development dependencies: they do not reach the
+  installed app, are fixed by SDK updates, and are not overridden by default.
+
 ## [1.0.0] - 2026-10-10
 
 > Brazil-ready, agent-neutral, verified on an instance.
