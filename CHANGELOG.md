@@ -6,6 +6,10 @@ version needs manual work to adopt it.
 
 ## [Unreleased]
 
+### Changed
+- `SECURITY.md` explains the advisories reported in the SDK's development dependencies: they do not reach the
+  installed app, are fixed by SDK updates, and are not overridden by default.
+
 ## [1.0.0] - 2026-10-10
 
 > Brazil-ready, agent-neutral, verified on an instance.
