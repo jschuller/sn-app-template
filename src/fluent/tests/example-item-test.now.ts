@@ -1,6 +1,6 @@
 import '@servicenow/sdk/global'
 import { Test, TestSuite } from '@servicenow/sdk/core'
-import { exampleUserRole } from '../roles/app-roles.now'
+import { exampleAdminRole, exampleUserRole } from '../roles/app-roles.now'
 
 /**
  * ATF tests run on the instance after deploy: `npm run test:instance`.
@@ -15,7 +15,7 @@ export const itemServiceTest = Test(
         active: true,
         name: 'Example Item: business rule and AppService',
         description:
-            'Inserts an urgent item without a priority, checks the business rule derived priority 1, then checks AppService validation, listing, update and delete.',
+            'Inserts an urgent item without a priority, checks the business rule derived priority 1, then checks AppService validation and listing.',
     },
     (atf) => {
         const inserted = atf.server.recordInsert({
@@ -60,17 +60,6 @@ export const itemServiceTest = Test(
                     assertEqual({ name: 'inserted item is listed', shouldbe: true, value: !!found });
                     assertEqual({ name: 'listed priority', shouldbe: 1, value: found ? found.priority : null });
                     assertEqual({ name: 'admin may edit', shouldbe: true, value: found ? found.can_write : null });
-
-                    var id = found ? found.sys_id : '';
-                    var updated = svc.updateItem(id, { priority: 3 });
-                    assertEqual({ name: 'admin update succeeds', shouldbe: 200, value: updated.status });
-                    assertEqual({ name: 'update changes the given field', shouldbe: 3, value: updated.body.priority });
-                    assertEqual({ name: 'update keeps other fields', shouldbe: 'ATF item', value: updated.body.name });
-
-                    var deleted = svc.deleteItem(id);
-                    assertEqual({ name: 'admin delete succeeds', shouldbe: 204, value: deleted.status });
-                    var afterDelete = svc.updateItem(id, { priority: 2 });
-                    assertEqual({ name: 'deleted item is gone', shouldbe: 404, value: afterDelete.status });
 
                     var farPage = svc.listItems({ offset: ['99999999999'] });
                     assertEqual({ name: 'huge offset is capped, not an error', shouldbe: 200, value: farPage.status });
@@ -202,9 +191,70 @@ export const itemUserRoleTest = Test(
     }
 )
 
+// The app's admin role grants update and delete. Runs as a user holding only that
+// role, because a sysadmin passes every ACL and would not prove the grant.
+export const itemAdminRoleTest = Test(
+    {
+        $id: Now.ID['example_item_admin_role_test'],
+        active: true,
+        name: 'Example Item: admin role may update and delete',
+        description:
+            'Seeds an item, then impersonates a user with only the app admin role and checks that AppService reports the item editable and deletable, updates it (200), deletes it (204) and then reports it missing (404).',
+    },
+    (atf) => {
+        atf.server.recordInsert({
+            $id: Now.ID['test_step_admin_seed_insert'],
+            table: 'x_snc_example_item',
+            fieldValues: {
+                x_snc_example_name: 'ATF admin item',
+                x_snc_example_category: 'general',
+            },
+            assert: 'record_successfully_inserted',
+            enforceSecurity: false,
+        })
+
+        atf.server.createUser({
+            $id: Now.ID['test_step_create_app_admin'],
+            firstName: 'ATF',
+            lastName: 'App Admin',
+            fieldValues: {},
+            groups: [],
+            roles: [exampleAdminRole],
+            impersonate: true,
+        })
+
+        atf.server.runServerSideScript({
+            $id: Now.ID['test_step_admin_service'],
+            script: `
+                (function(outputs, steps, params, stepResult, assertEqual) {
+                    var svc = new x_snc_example.AppService();
+
+                    var list = svc.listItems({ limit: ['100'] });
+                    assertEqual({ name: 'app admin may list', shouldbe: 200, value: list.status });
+                    var seeded = list.body.filter(function(item) { return item.name === 'ATF admin item'; })[0];
+                    assertEqual({ name: 'seeded item is listed', shouldbe: true, value: !!seeded });
+                    assertEqual({ name: 'app admin may edit', shouldbe: true, value: seeded ? seeded.can_write : null });
+                    assertEqual({ name: 'app admin may delete', shouldbe: true, value: seeded ? seeded.can_delete : null });
+
+                    var id = seeded ? seeded.sys_id : '';
+                    var updated = svc.updateItem(id, { priority: 5 });
+                    assertEqual({ name: 'app admin update succeeds', shouldbe: 200, value: updated.status });
+                    assertEqual({ name: 'update changes the given field', shouldbe: 5, value: updated.body.priority });
+                    assertEqual({ name: 'update keeps other fields', shouldbe: 'ATF admin item', value: updated.body.name });
+
+                    var deleted = svc.deleteItem(id);
+                    assertEqual({ name: 'app admin delete succeeds', shouldbe: 204, value: deleted.status });
+                    var afterDelete = svc.updateItem(id, { priority: 2 });
+                    assertEqual({ name: 'deleted item is gone', shouldbe: 404, value: afterDelete.status });
+                })(outputs, steps, params, stepResult, assertEqual);
+            `,
+        })
+    }
+)
+
 export const exampleAppSuite = TestSuite({
     $id: Now.ID['example_app_suite'],
     name: 'Example App',
     description: 'All Example App tests. Run with: npm run test:instance',
-    tests: [itemServiceTest, itemSecurityTest, itemUserRoleTest],
+    tests: [itemServiceTest, itemSecurityTest, itemUserRoleTest, itemAdminRoleTest],
 })
