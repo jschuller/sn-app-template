@@ -1,5 +1,6 @@
 import '@servicenow/sdk/global'
 import { Test, TestSuite } from '@servicenow/sdk/core'
+import { exampleUserRole } from '../roles/app-roles.now'
 
 /**
  * ATF tests run on the instance after deploy: `npm run test:instance`.
@@ -14,7 +15,7 @@ export const itemServiceTest = Test(
         active: true,
         name: 'Example Item: business rule and AppService',
         description:
-            'Inserts an urgent item without a priority, checks the business rule derived priority 1, then checks AppService validation and listing.',
+            'Inserts an urgent item without a priority, checks the business rule derived priority 1, then checks AppService validation, listing, update and delete.',
     },
     (atf) => {
         const inserted = atf.server.recordInsert({
@@ -59,6 +60,17 @@ export const itemServiceTest = Test(
                     assertEqual({ name: 'inserted item is listed', shouldbe: true, value: !!found });
                     assertEqual({ name: 'listed priority', shouldbe: 1, value: found ? found.priority : null });
                     assertEqual({ name: 'admin may edit', shouldbe: true, value: found ? found.can_write : null });
+
+                    var id = found ? found.sys_id : '';
+                    var updated = svc.updateItem(id, { priority: 3 });
+                    assertEqual({ name: 'admin update succeeds', shouldbe: 200, value: updated.status });
+                    assertEqual({ name: 'update changes the given field', shouldbe: 3, value: updated.body.priority });
+                    assertEqual({ name: 'update keeps other fields', shouldbe: 'ATF item', value: updated.body.name });
+
+                    var deleted = svc.deleteItem(id);
+                    assertEqual({ name: 'admin delete succeeds', shouldbe: 204, value: deleted.status });
+                    var afterDelete = svc.updateItem(id, { priority: 2 });
+                    assertEqual({ name: 'deleted item is gone', shouldbe: 404, value: afterDelete.status });
 
                     var farPage = svc.listItems({ offset: ['99999999999'] });
                     assertEqual({ name: 'huge offset is capped, not an error', shouldbe: 200, value: farPage.status });
@@ -108,9 +120,91 @@ export const itemSecurityTest = Test(
     }
 )
 
+// The read/create vs update/delete split: a user with only the app's user role.
+export const itemUserRoleTest = Test(
+    {
+        $id: Now.ID['example_item_user_role_test'],
+        active: true,
+        name: 'Example Item: user role may read and create, not update or delete',
+        description:
+            'Seeds an item as admin, then impersonates a user with only the user role and checks that the write and delete ACLs block secured updates and deletes, and that AppService returns 403 for them and 201 for create.',
+    },
+    (atf) => {
+        const seeded = atf.server.recordInsert({
+            $id: Now.ID['test_step_seed_insert'],
+            table: 'x_snc_example_item',
+            fieldValues: { x_snc_example_name: 'ATF seeded item' },
+            assert: 'record_successfully_inserted',
+            enforceSecurity: false,
+        })
+
+        atf.server.createUser({
+            $id: Now.ID['test_step_create_app_user'],
+            firstName: 'ATF',
+            lastName: 'App User',
+            fieldValues: {},
+            groups: [],
+            roles: [exampleUserRole],
+            impersonate: true,
+        })
+
+        atf.server.recordUpdate({
+            $id: Now.ID['test_step_user_denied_update'],
+            table: 'x_snc_example_item',
+            recordId: seeded.record_id,
+            fieldValues: { x_snc_example_name: 'Should not change' },
+            assert: 'record_not_updated',
+            enforceSecurity: true,
+        })
+
+        atf.server.recordDelete({
+            $id: Now.ID['test_step_user_denied_delete'],
+            table: 'x_snc_example_item',
+            recordId: seeded.record_id,
+            assert: 'record_not_deleted',
+            enforceSecurity: true,
+        })
+
+        atf.server.recordValidation({
+            $id: Now.ID['test_step_user_seed_unchanged'],
+            table: 'x_snc_example_item',
+            recordId: seeded.record_id,
+            fieldValues: 'x_snc_example_name=ATF seeded item^EQ',
+            assert: 'record_validated',
+        })
+
+        atf.server.runServerSideScript({
+            $id: Now.ID['test_step_user_service'],
+            script: `
+                (function(outputs, steps, params, stepResult, assertEqual) {
+                    var svc = new x_snc_example.AppService();
+
+                    var list = svc.listItems({ limit: ['100'] });
+                    assertEqual({ name: 'user may list', shouldbe: 200, value: list.status });
+                    var seeded = list.body.filter(function(item) { return item.name === 'ATF seeded item'; })[0];
+                    assertEqual({ name: 'seeded item is listed', shouldbe: true, value: !!seeded });
+                    assertEqual({ name: 'user may not edit', shouldbe: false, value: seeded ? seeded.can_write : null });
+                    assertEqual({ name: 'user may not delete', shouldbe: false, value: seeded ? seeded.can_delete : null });
+
+                    var id = seeded ? seeded.sys_id : '';
+                    var updated = svc.updateItem(id, { name: 'Should not change' });
+                    assertEqual({ name: 'AppService denies update', shouldbe: 403, value: updated.status });
+                    var deleted = svc.deleteItem(id);
+                    assertEqual({ name: 'AppService denies delete', shouldbe: 403, value: deleted.status });
+
+                    var created = svc.createItem({ name: 'ATF user item' });
+                    assertEqual({ name: 'user may create', shouldbe: 201, value: created.status });
+                    assertEqual({ name: 'created item is not editable by user', shouldbe: false, value: created.body.can_write });
+                    assertEqual({ name: 'created item is not deletable by user', shouldbe: false, value: created.body.can_delete });
+                })(outputs, steps, params, stepResult, assertEqual);
+            `,
+        })
+    }
+)
+
 export const exampleAppSuite = TestSuite({
     $id: Now.ID['example_app_suite'],
     name: 'Example App',
     description: 'All Example App tests. Run with: npm run test:instance',
-    tests: [itemServiceTest, itemSecurityTest],
+    tests: [itemServiceTest, itemSecurityTest, itemUserRoleTest],
 })
