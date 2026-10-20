@@ -7,8 +7,11 @@ on:
   release:
     types: [published]
 
-permissions:
-  contents: read
+# Supply-chain baseline (homelab-governance, 2026-10-20): the workflow grants nothing and the job asks for
+# exactly what it needs; actions pinned by commit SHA; the checkout keeps no token; no cache is restored in
+# this job, which can write the release and sign attestations; Node (and so npm) by exact version; npm
+# installs from the lockfile with install scripts off.
+permissions: {}
 
 jobs:
   package:
@@ -24,10 +27,12 @@ jobs:
         with:
           persist-credentials: false
 
+      # Exact Node 24 release (2026-09-07, bundles npm 11.19.0), at least 7 days old; .nvmrc's
+      # major is what CI tests. No cache: a cache another run wrote never reaches this job.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: .nvmrc
-          cache: npm
+          node-version: "24.21.0"
+          package-manager-cache: false
 
       # A release cut from the wrong commit, or a missed version bump, would otherwise
       # ship an app whose sys_app version disagrees with its tag.
@@ -41,7 +46,7 @@ jobs:
             exit 1
           fi
 
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run build:ci
       - run: npm run pack

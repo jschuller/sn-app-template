@@ -1,5 +1,7 @@
 # Weekly dependency updates. Nothing auto-merges: an SDK bump can change keys.ts and
 # instance behaviour, so each update needs a build and a test-instance check (RELEASING.md).
+# Every update waits out a cooldown (supply-chain baseline, 2026-10-20): 7 days, and 14 for
+# a semver-major npm bump. github-actions keeps the SHA pins and their "# vX.Y.Z" comments.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -7,6 +9,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     groups:
       servicenow:
         patterns: ['@servicenow/*']
@@ -21,6 +26,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ['*']
