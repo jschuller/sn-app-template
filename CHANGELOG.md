@@ -7,6 +7,9 @@ version needs manual work to adopt it.
 ## [Unreleased]
 
 ### Added
+- Supply-chain baseline for CI and releases: `npm ci --ignore-scripts`, no npm cache in the release and
+  instance-deploy jobs, Node 24.21.0 by exact version for releases, `.npmrc` `min-release-age=7`, Dependabot
+  cooldowns (7 days, 14 for npm majors), job-level permissions and a zizmor job.
 - ATF tests for the role split: a user with only `x_snc_example.user` may list and create but is denied update and
   delete (secured record steps and `AppService` 403s, `can_write`/`can_delete` false), and a user with only
   `x_snc_example.admin` may update (200) and delete (204, then 404), with `can_write`/`can_delete` true.
