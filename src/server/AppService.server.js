@@ -30,6 +30,8 @@ AppService.prototype = {
         var items = [];
         var gr = new GlideRecordSecure(ITEM_TABLE);
         gr.orderByDesc('sys_created_on');
+        // Rows created in the same second need a fixed order, or offset pages could repeat or skip them.
+        gr.orderByDesc('sys_id');
         gr.chooseWindow(offset, offset + limit);
         gr.query();
         while (gr.next()) {

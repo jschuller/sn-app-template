@@ -27,6 +27,11 @@ version needs manual work to adopt it.
 - The `deploy-and-verify` skill no longer lets an agent retry with `--reinstall` after only telling the user: it must
   wait for explicit approval, because `--reinstall` uninstalls the app and deletes its table records. `AGENTS.md`
   rule 2 and `TROUBLESHOOTING.md` say the same.
+- The item list no longer shows a row twice (duplicate React keys) when rows are created between two "Load more"
+  requests, and a create, update or delete no longer drops the pages loaded with "Load more": pages are merged by
+  `sys_id` and every loaded page is reloaded after a change (`src/client/services/pagination.js`, unit-tested).
+  `AppService.listItems` breaks `sys_created_on` ties by `sys_id`, so rows created in the same second keep one order
+  across pages. Built and unit-tested; not yet exercised on an instance.
 
 ## [1.0.0] - 2026-10-10
 
