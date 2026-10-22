@@ -13,8 +13,11 @@ log or store credentials.
    carries the target instance's vendor prefix (instances refuse other vendors' prefixes; `npm run setup` renames it).
 2. **Find the alias** — `npx now-sdk auth --list`; ask the user which alias to use if more than one fits.
 3. **Install** — `npm run deploy -- --auth <alias>`. Install is asynchronous; the CLI prints a rollback link on success.
-   On "Could not determine app installation status", retry once with `--reinstall` after telling the user it removes
-   instance-only changes to the app. On "Unable to install third party application", see step 1.
+   On "Could not determine app installation status", check the execution tracker link first; do **not** retry with
+   `--reinstall` on your own. `--reinstall` uninstalls the app first, which deletes everything on the instance that is
+   not in source (records in the app's tables, instance-only changes). Explain that to the user, name the instance,
+   and wait for their explicit approval before you retry once with `--reinstall`. On "Unable to install third party
+   application", see step 1.
 4. **ATF** — `npm run test:instance -- --auth <alias> -o json`. If it answers "Scheduled test/suite execution is disabled",
    the instance needs `sn_atf.runner.enabled` and then `sn_atf.schedule.enabled` set to `true` — ask the user before
    changing instance properties. Report the pass/fail counts and the result URL.

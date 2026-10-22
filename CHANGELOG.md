@@ -18,6 +18,11 @@ version needs manual work to adopt it.
 - `SECURITY.md` explains the advisories reported in the SDK's development dependencies: they do not reach the
   installed app, are fixed by SDK updates, and are not overridden by default.
 
+### Fixed
+- The `deploy-and-verify` skill no longer lets an agent retry with `--reinstall` after only telling the user: it must
+  wait for explicit approval, because `--reinstall` uninstalls the app and deletes its table records. `AGENTS.md`
+  rule 2 and `TROUBLESHOOTING.md` say the same.
+
 ## [1.0.0] - 2026-10-10
 
 > Brazil-ready, agent-neutral, verified on an instance.

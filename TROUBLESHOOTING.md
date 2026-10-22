@@ -15,7 +15,8 @@ their own company code (system property `glide.appcreator.company.code`), so the
 Install runs asynchronously and polls the instance. Check the execution tracker link the CLI prints (or
 `sys_execution_tracker` on the instance). If the upload succeeded but polling failed, retry once with
 `npm run deploy -- --auth <alias> --reinstall`. `--reinstall` uninstalls first, which deletes anything changed on the
-instance that is not in source.
+instance that is not in source, including the records in the app's tables. Coding agents must get your explicit
+approval before they run it (AGENTS.md rule 2).
 
 ## `now-sdk auth` or install fails with 401
 

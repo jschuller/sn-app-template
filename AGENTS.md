@@ -54,7 +54,9 @@ for the SDK (`now-sdk`, from github.com/ServiceNow/sdk) teaches the same workflo
    `npm run setup -- --scope x_<vendor>_<app> --name "<Name>"` once; never hand-edit the scope.
 2. **Never delete a `Table()`, `Record()`, `BusinessRule()` or other record definition without asking the user.**
    Removing it from source makes the next install delete it on the instance (tracked in `keys.ts`). Use `Now.del()` /
-   `npx now-sdk explain now-del-guide` when deletion is intended.
+   `npx now-sdk explain now-del-guide` when deletion is intended. The same applies to `npm run deploy -- --reinstall`:
+   it uninstalls the app first and deletes everything on the instance that is not in source, including the records in
+   the app's tables. Never run it without the user's explicit approval for that instance; telling them is not enough.
 3. **Commit `src/fluent/generated/keys.ts`.** It maps every `Now.ID[...]` key to a stable sys_id. Never edit it by hand,
    never rename an existing `Now.ID` key (that creates a new record and orphans the old one). CI builds with `--frozenKeys`.
 4. **Fluent files are declarative.** Every top-level statement must be an SDK call or an `export const x = SdkCall(...)`;
