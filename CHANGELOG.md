@@ -7,6 +7,11 @@ version needs manual work to adopt it.
 ## [Unreleased]
 
 ### Added
+- `npm test` (`node:test`, run in CI): `tests/setup.test.mjs` runs `scripts/setup.mjs` on temporary copies of the
+  repository, with and without git, and checks the scope and name rewrite, the new `scopeId`, the lockfile,
+  CHANGELOG and generated-keys reset, and the refusals (unsafe scopes and names, a dirty tree, a second run without
+  `--force`, which must write nothing). The setup tests skip themselves once an app is set up, and `setup.mjs` leaves
+  `tests/setup.test.mjs` as written.
 - Supply-chain baseline for CI and releases: `npm ci --ignore-scripts`, no npm cache in the release and
   instance-deploy jobs, Node 24.21.0 by exact version for releases, `.npmrc` `min-release-age=7`, Dependabot
   cooldowns (7 days, 14 for npm majors), job-level permissions and a zizmor job.
@@ -17,6 +22,21 @@ version needs manual work to adopt it.
 ### Changed
 - `SECURITY.md` explains the advisories reported in the SDK's development dependencies: they do not reach the
   installed app, are fixed by SDK updates, and are not overridden by default.
+
+### Fixed
+- The `deploy-and-verify` skill no longer lets an agent retry with `--reinstall` after only telling the user: it must
+  wait for explicit approval, because `--reinstall` uninstalls the app and deletes its table records. `AGENTS.md`
+  rule 2 and `TROUBLESHOOTING.md` say the same.
+- The item list no longer shows a row twice (duplicate React keys) when rows are created between two "Load more"
+  requests, and a create, update or delete no longer drops the pages loaded with "Load more": pages are merged by
+  `sys_id` and every loaded page is reloaded after a change (`src/client/services/pagination.js`, unit-tested).
+  `AppService.listItems` breaks `sys_created_on` ties by `sys_id`, so rows created in the same second keep one order
+  across pages. Built and unit-tested; not yet exercised on an instance.
+- `AppService.server.js` no longer declares its constants (`FP`, `CATEGORIES`, `MAX_NAME`, …) at the top level of the
+  scope, where another Script Include declaring the same names could change AppService's validation. The file is now
+  wrapped in a function that returns the class; `AGENTS.md` rule 5 and `TROUBLESHOOTING.md` teach the same pattern.
+  Behaviour is unchanged (a vm comparison of the old and new file gave identical results); `tests/app-service.test.mjs`
+  checks that only `AppService` is declared. Not yet run on an instance.
 
 ## [1.0.0] - 2026-10-10
 

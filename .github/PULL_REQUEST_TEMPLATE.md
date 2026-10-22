@@ -5,7 +5,7 @@
 <!-- Build, lint, and — for behaviour changes — the instance release/patch and ATF result. -->
 
 ## Checklist
-- [ ] `npm run lint` and `npm run build` pass
+- [ ] `npm run lint`, `npm test` and `npm run build` pass
 - [ ] `src/fluent/generated/keys.ts` changes are included (no hand edits)
 - [ ] No `Table()`/`Record()` definitions removed without saying so above
 - [ ] Behaviour changes have an ATF test, and were run on a test instance

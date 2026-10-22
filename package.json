@@ -15,6 +15,7 @@
         "build": "now-sdk build",
         "build:ci": "now-sdk build --frozenKeys",
         "lint": "eslint .",
+        "test": "node --test tests/*.test.mjs",
         "deploy": "now-sdk install",
         "test:instance": "now-sdk cicd testsuite run --test-suite-name \"Example App\"",
         "pack": "now-sdk pack",

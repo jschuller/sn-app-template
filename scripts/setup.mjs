@@ -25,8 +25,10 @@ const SKIP_FILES = new Set([
     'RELEASING.md',
     'docs/compatibility.md',
     'scripts/setup.mjs',
+    'tests/setup.test.mjs',
     join('docs', 'compatibility.md'),
     join('scripts', 'setup.mjs'),
+    join('tests', 'setup.test.mjs'),
 ]);
 const TEMPLATE_SCOPE = 'x_snc_example';
 const TEMPLATE_REPO = 'jschuller/sn-app-template';

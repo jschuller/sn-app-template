@@ -22,6 +22,7 @@ Request flow: React page → `fetch()` with `X-UserToken: window.g_ck` → Scrip
 ```bash
 npm ci                                   # install exact dependency versions
 npm run lint                             # ESLint (client, server, scripts)
+npm test                                 # node:test suite in tests/ (setup.mjs on a temporary copy)
 npm run build                            # compile Fluent + bundle the UI (writes src/fluent/generated/keys.ts)
 npm run build:ci                         # build --frozenKeys: fails if keys.ts is stale (CI uses this)
 npm run deploy -- --auth <alias>         # now-sdk install to a dev/test instance
@@ -54,14 +55,20 @@ for the SDK (`now-sdk`, from github.com/ServiceNow/sdk) teaches the same workflo
    `npm run setup -- --scope x_<vendor>_<app> --name "<Name>"` once; never hand-edit the scope.
 2. **Never delete a `Table()`, `Record()`, `BusinessRule()` or other record definition without asking the user.**
    Removing it from source makes the next install delete it on the instance (tracked in `keys.ts`). Use `Now.del()` /
-   `npx now-sdk explain now-del-guide` when deletion is intended.
+   `npx now-sdk explain now-del-guide` when deletion is intended. The same applies to `npm run deploy -- --reinstall`:
+   it uninstalls the app first and deletes everything on the instance that is not in source, including the records in
+   the app's tables. Never run it without the user's explicit approval for that instance; telling them is not enough.
 3. **Commit `src/fluent/generated/keys.ts`.** It maps every `Now.ID[...]` key to a stable sys_id. Never edit it by hand,
    never rename an existing `Now.ID` key (that creates a new record and orphans the old one). CI builds with `--frozenKeys`.
 4. **Fluent files are declarative.** Every top-level statement must be an SDK call or an `export const x = SdkCall(...)`;
    plain `const` declarations, string concatenation in properties and other statements fail the build. Use one string
    literal per property.
-5. **Script Includes load independently.** Each `.server.js` file defines its own constants (`var FP = 'x_snc_example_';`);
-   globals from one Script Include are not visible in another. Call them by API name: `new x_snc_example.AppService()`.
+5. **Script Includes keep their constants private.** Wrap each `.server.js` file in a function that returns the class,
+   so the class is the only name the file declares (see `AppService.server.js`):
+   `var AppService = (function() { var FP = 'x_snc_example_'; … return AppService; })();`.
+   Top-level `var` constants may be shared with other Script Includes that run in the same transaction, so a second
+   file declaring `FP` or `MAX_NAME` could change this one's values. Each file defines the constants it needs; call
+   other Script Includes by API name: `new x_snc_example.AppService()`.
 6. **Data access goes through `GlideRecordSecure`** in anything reachable from REST or the UI, so ACLs apply to the caller.
    Plain `GlideRecord` bypasses ACLs; use it only where elevated access is intended and say why in a comment.
 7. **REST routes stay thin** and delegate to `AppService`, which validates input and returns `{ status, body }`.
@@ -83,7 +90,7 @@ for the SDK (`now-sdk`, from github.com/ServiceNow/sdk) teaches the same workflo
   four record ACLs, `AppService` methods, REST routes, an ATF test, then register the file in `src/fluent/index.now.ts`.
   Use the object form `actions: { read: true }` — it controls *cross-scope* access, so grant writes only when another scope
   needs them. Keep `allowWebServiceAccess: true` if the REST Table API must reach the table.
-- **Add a Script Include:** code in `src/server/<Name>.server.js` (`Class.create()` pattern), declaration in
+- **Add a Script Include:** code in `src/server/<Name>.server.js` (`Class.create()` inside a function wrapper, rule 5), declaration in
   `src/fluent/script-includes/` with `script: Now.include('../../server/<Name>.server.js')`, `apiName: 'x_snc_example.<Name>'`,
   `accessibleFrom: 'package_private'` unless other scopes call it.
 - **Add a REST route:** add to the `routes` of `src/fluent/rest-api/app-api.now.ts` with its own `$id`, `method`, `path`
@@ -104,7 +111,7 @@ for the SDK (`now-sdk`, from github.com/ServiceNow/sdk) teaches the same workflo
 
 ## Done means
 
-- `npm run lint` and `npm run build` pass, and `keys.ts` changes are committed with the code that caused them.
+- `npm run lint`, `npm test` and `npm run build` pass, and `keys.ts` changes are committed with the code that caused them.
 - For behaviour changes: deployed to a dev instance and `npm run test:instance` passes; new behaviour has an ATF test.
 - Docs that describe the change (`README.md`, this file, `TROUBLESHOOTING.md`, `CHANGELOG.md` under `[Unreleased]`)
   are updated in the same change.

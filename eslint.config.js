@@ -40,7 +40,7 @@ export default [
 
     // Repository tooling (Node).
     {
-        files: ['scripts/**/*.mjs', 'eslint.config.js'],
+        files: ['scripts/**/*.mjs', 'tests/**/*.mjs', 'eslint.config.js'],
         ...js.configs.recommended,
         languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: { ...globals.node } },
     },

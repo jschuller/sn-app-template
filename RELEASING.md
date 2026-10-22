@@ -15,7 +15,7 @@ instance first.
 
 On the release branch, with a clean tree:
 
-1. `npm ci && npm run lint && npm run build:ci && npm run sync:skills -- --check`
+1. `npm ci && npm run lint && npm test && npm run build:ci && npm run sync:skills -- --check`
 2. Verify on an instance (a PDI is fine), in a scratch copy so the template scope stays `x_snc_example`:
    ```bash
    rsync -a --exclude node_modules --exclude .git ./ /tmp/sn-smoke/ && cd /tmp/sn-smoke && npm ci
