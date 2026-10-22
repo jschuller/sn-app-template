@@ -32,6 +32,11 @@ version needs manual work to adopt it.
   `sys_id` and every loaded page is reloaded after a change (`src/client/services/pagination.js`, unit-tested).
   `AppService.listItems` breaks `sys_created_on` ties by `sys_id`, so rows created in the same second keep one order
   across pages. Built and unit-tested; not yet exercised on an instance.
+- `AppService.server.js` no longer declares its constants (`FP`, `CATEGORIES`, `MAX_NAME`, …) at the top level of the
+  scope, where another Script Include declaring the same names could change AppService's validation. The file is now
+  wrapped in a function that returns the class; `AGENTS.md` rule 5 and `TROUBLESHOOTING.md` teach the same pattern.
+  Behaviour is unchanged (a vm comparison of the old and new file gave identical results); `tests/app-service.test.mjs`
+  checks that only `AppService` is declared. Not yet run on an instance.
 
 ## [1.0.0] - 2026-10-10
 

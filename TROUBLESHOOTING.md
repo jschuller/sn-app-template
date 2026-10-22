@@ -83,5 +83,6 @@ granted` — but note that permissive recording on Brazil Patch 0 missed some AP
 
 ## "AppService is not defined" at runtime
 
-Script Includes are called by API name: `new x_snc_example.AppService()`. Each Script Include file must define its own
-constants (`var FP = 'x_snc_example_';`); globals from one are not visible in another.
+Script Includes are called by API name: `new x_snc_example.AppService()`. The file must still declare the class under
+the Script Include's name: `var AppService = (function() { … return AppService; })();`. Each Script Include file
+defines its own constants inside that function (`var FP = 'x_snc_example_';`); never rely on another file's constants.
