@@ -38,6 +38,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Runs scripts/setup.mjs on temporary copies of the checkout (tests/setup.test.mjs).
+      - name: Test
+        run: npm test
+
       - name: Agent skills are in sync (.agents/skills -> .claude/skills)
         run: npm run sync:skills -- --check
 

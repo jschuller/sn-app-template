@@ -148,6 +148,7 @@ env_vars = ["SERVICENOW_INSTANCE_URL", "SERVICENOW_USERNAME", "SERVICENOW_PASSWO
 |---|---|
 | `npm run setup -- --scope … --name …` | Turn the template into your app (once) |
 | `npm run lint` | ESLint for the UI, the Script Include and the scripts |
+| `npm test` | Unit tests (`node:test`) in `tests/`, including `npm run setup` on a temporary copy |
 | `npm run build` | Compile Fluent and bundle the UI into `dist/` |
 | `npm run build:ci` | Build with `--frozenKeys` (fails if `keys.ts` is stale) |
 | `npm run deploy -- --auth <alias>` | Install on an instance |
@@ -156,7 +157,7 @@ env_vars = ["SERVICENOW_INSTANCE_URL", "SERVICENOW_USERNAME", "SERVICENOW_PASSWO
 
 ## CI deploy (optional)
 
-`.github/workflows/ci.yml` lints, builds with frozen keys and packages on every pull request and every push to
+`.github/workflows/ci.yml` lints, runs `npm test`, builds with frozen keys and packages on every pull request and every push to
 `main`. Its `instance-test` job also deploys to a **test** instance on pushes to `main` and runs the ATF suite once
 you add the repository variable
 `SN_SDK_INSTANCE_URL` and the secrets `SN_SDK_OAUTH_CLIENT_ID` / `SN_SDK_OAUTH_CLIENT_SECRET` (OAuth client

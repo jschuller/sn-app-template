@@ -7,6 +7,11 @@ version needs manual work to adopt it.
 ## [Unreleased]
 
 ### Added
+- `npm test` (`node:test`, run in CI): `tests/setup.test.mjs` runs `scripts/setup.mjs` on temporary copies of the
+  repository, with and without git, and checks the scope and name rewrite, the new `scopeId`, the lockfile,
+  CHANGELOG and generated-keys reset, and the refusals (unsafe scopes and names, a dirty tree, a second run without
+  `--force`, which must write nothing). The setup tests skip themselves once an app is set up, and `setup.mjs` leaves
+  `tests/setup.test.mjs` as written.
 - Supply-chain baseline for CI and releases: `npm ci --ignore-scripts`, no npm cache in the release and
   instance-deploy jobs, Node 24.21.0 by exact version for releases, `.npmrc` `min-release-age=7`, Dependabot
   cooldowns (7 days, 14 for npm majors), job-level permissions and a zizmor job.

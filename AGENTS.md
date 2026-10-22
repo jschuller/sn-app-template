@@ -22,6 +22,7 @@ Request flow: React page → `fetch()` with `X-UserToken: window.g_ck` → Scrip
 ```bash
 npm ci                                   # install exact dependency versions
 npm run lint                             # ESLint (client, server, scripts)
+npm test                                 # node:test suite in tests/ (setup.mjs on a temporary copy)
 npm run build                            # compile Fluent + bundle the UI (writes src/fluent/generated/keys.ts)
 npm run build:ci                         # build --frozenKeys: fails if keys.ts is stale (CI uses this)
 npm run deploy -- --auth <alias>         # now-sdk install to a dev/test instance
@@ -106,7 +107,7 @@ for the SDK (`now-sdk`, from github.com/ServiceNow/sdk) teaches the same workflo
 
 ## Done means
 
-- `npm run lint` and `npm run build` pass, and `keys.ts` changes are committed with the code that caused them.
+- `npm run lint`, `npm test` and `npm run build` pass, and `keys.ts` changes are committed with the code that caused them.
 - For behaviour changes: deployed to a dev instance and `npm run test:instance` passes; new behaviour has an ATF test.
 - Docs that describe the change (`README.md`, this file, `TROUBLESHOOTING.md`, `CHANGELOG.md` under `[Unreleased]`)
   are updated in the same change.

@@ -21,7 +21,7 @@ possible variation.
 
 1. Fork, then branch from `main`.
 2. `npm ci`, make the change, keep the `x_snc_example` scope prefix.
-3. `npm run lint && npm run build`; commit any `src/fluent/generated/keys.ts` changes with the code.
+3. `npm run lint && npm test && npm run build`; commit any `src/fluent/generated/keys.ts` changes with the code.
 4. If you changed `.agents/skills/`, run `npm run sync:skills`.
 5. For behaviour changes, deploy to a test instance (under a scope with your vendor prefix — `npm run setup` on a
    scratch copy) and run the ATF suite. Say which release and patch you tested in the PR.
