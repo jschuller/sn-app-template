@@ -36,7 +36,8 @@ const scratch = mkdtempSync(join(tmpdir(), 'sn-app-template-setup-'));
 after(() => rmSync(scratch, { recursive: true, force: true }));
 
 // Keeps git from finding a repository above the scratch directory.
-const env = { ...process.env, GIT_CEILING_DIRECTORIES: scratch };
+// No global git config or hooks: the temp repos must not run the user's hooks or templates.
+const env = { ...process.env, GIT_CEILING_DIRECTORIES: scratch, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' };
 
 function git(cwd, ...args) {
     return execFileSync(

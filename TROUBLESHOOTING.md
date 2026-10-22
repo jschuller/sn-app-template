@@ -59,7 +59,8 @@ so every platform script API it calls must be declared. Add the API named in the
 **If the call is still refused after deploying:** the denied call made the platform create its own privilege record
 with status *requested*, and installing the app keeps that record instead of your *allowed* one. Approve it (System
 Applications → Application Cross-Scope Access, set Status to Allowed) or redeploy with `--reinstall` on a development
-instance.
+instance. `--reinstall` deletes the records in the app's tables; coding agents must get your explicit approval before
+they run it (AGENTS.md rule 2).
 
 Prefer to find these before deploying to a strict instance: run the app's flows and the ATF suite with
 `runtimeAccessTracking: "permissive"` and check the log for `Security restricted: Execute operation on API '…' … was
