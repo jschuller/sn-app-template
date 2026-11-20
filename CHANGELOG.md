@@ -7,6 +7,8 @@ version needs manual work to adopt it.
 ## [Unreleased]
 
 ### Added
+- `docs/PRD.md`: a short design-document skeleton (purpose, roles, scope, requirements with their acceptance check,
+  data, open questions), named in `CLAUDE.md` as the place to read before a feature.
 - `find-issues` and `issue-interview` skills (`/find-issues`, `/issue-interview <n>`): a read-only scan by parallel
   sub-agents that proposes issues and files only the ones picked, and an interview that writes a testable spec into
   an issue and labels it `ready`. Both set `disable-model-invocation: true`, so only the user starts them.
@@ -23,6 +25,12 @@ version needs manual work to adopt it.
   `x_snc_example.admin` may update (200) and delete (204, then 404), with `can_write`/`can_delete` true.
 
 ### Changed
+- The MCP examples (`.mcp.json.example`, `.pi/mcp.json.example`, the Codex snippet in the README) start
+  `mcp-server-servicenow` 0.9.3 through a launcher that reads an instance API key from the OS secret store, read-only.
+  They used basic auth from exported shell variables and 0.7.0.
+- CI is build-only: the optional `instance-test` job (deploy and ATF on pushes to `main`, with an OAuth client
+  secret in the repository) is removed. Deploy and run ATF from your machine.
+- `CLAUDE.md` and the README: install ServiceNow's `now-sdk` skill once, as a user skill or as the plugin, not both.
 - `@servicenow/sdk` 4.13.6 → 4.14.2. 4.14 keeps `now-sdk auth` aliases in an encrypted file instead of the keychain
   entry and migrates them on first use; see `docs/compatibility.md`.
 - `SECURITY.md` explains the advisories reported in the SDK's development dependencies: they do not reach the
