@@ -126,20 +126,23 @@ The agents' Fluent knowledge comes from the SDK itself: `npx now-sdk explain <to
 matches the installed SDK version, so it does not drift the way copied docs do. ServiceNow also publishes an official
 agent skill for the SDK ([ServiceNow/sdk](https://github.com/ServiceNow/sdk)):
 
-- **Claude Code:** `/plugin install servicenow-sdk@claude-plugins-official`
+- **Claude Code:** copy `skills/now-sdk/` from that repository into `~/.claude/skills/`, or
+  `/plugin install servicenow-sdk@claude-plugins-official`. One of the two, not both: the plugin carries the same skill.
 - **Codex:** `$skill-installer https://github.com/ServiceNow/sdk/tree/master/skills/now-sdk`
 - **Pi:** copy `skills/now-sdk/` from that repository into `.agents/skills/` (or `~/.agents/skills/`)
 
-For MCP access, copy the example for your agent, export `SERVICENOW_INSTANCE_URL`, `SERVICENOW_USERNAME` and
-`SERVICENOW_PASSWORD` (a dedicated integration user, not `admin`), and keep `SERVICENOW_READ_ONLY=true` unless a task
-needs writes. Codex reads MCP servers from `~/.codex/config.toml`:
+For MCP access, copy the example for your agent to `.mcp.json` / `.pi/mcp.json` (both gitignored) and fill in the
+instance. The examples authenticate with an instance API key that belongs to a dedicated integration user (not
+`admin`), and keep `SERVICENOW_READ_ONLY=true`. No credential sits in the file or in an exported shell variable:
+`with-secrets` stands for whatever launcher you use that reads the key from your OS secret store (macOS Keychain,
+libsecret, a password manager's CLI) and starts the server with it in its environment. Without such a launcher, use
+your password manager's own `run` command in its place. Codex reads MCP servers from `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.servicenow]
-command = "uvx"
-args = ["mcp-server-servicenow==0.7.0"]
-env = { SERVICENOW_AUTH_TYPE = "basic", SERVICENOW_READ_ONLY = "true" }
-env_vars = ["SERVICENOW_INSTANCE_URL", "SERVICENOW_USERNAME", "SERVICENOW_PASSWORD"]
+command = "with-secrets"
+args = ["SERVICENOW_API_KEY=<secret-store item>", "--", "uvx", "mcp-server-servicenow==0.9.3"]
+env = { SERVICENOW_INSTANCE_URL = "https://<instance>.service-now.com", SERVICENOW_AUTH_TYPE = "api_key", SERVICENOW_API_KEY_HEADER = "x-sn-apikey", SERVICENOW_READ_ONLY = "true" }
 ```
 
 ## Commands
@@ -155,18 +158,19 @@ env_vars = ["SERVICENOW_INSTANCE_URL", "SERVICENOW_USERNAME", "SERVICENOW_PASSWO
 | `npm run test:instance -- --auth <alias>` | Run the ATF suite on the instance |
 | `npm run pack` | Package the app as an installable zip in `target/` |
 
-## CI deploy (optional)
+## CI
 
-`.github/workflows/ci.yml` lints, runs `npm test`, builds with frozen keys and packages on every pull request and every push to
-`main`. Its `instance-test` job also deploys to a **test** instance on pushes to `main` and runs the ATF suite once
-you add the repository variable
-`SN_SDK_INSTANCE_URL` and the secrets `SN_SDK_OAUTH_CLIENT_ID` / `SN_SDK_OAUTH_CLIENT_SECRET` (OAuth client
-credentials; setup in `npx now-sdk explain ci-integration`). Promote to production through the Application Repository
-(`now-sdk cicd publish` / `cicd install`), not with `now-sdk install`.
+`.github/workflows/ci.yml` lints, runs `npm test`, builds with frozen keys and packages on every pull request and every
+push to `main`. It does not touch an instance: deploy and run the ATF suite from your machine
+(`npm run deploy -- --auth <alias>`, then `npm run test:instance -- --auth <alias>`). An instance job in CI would put
+an instance credential into the repository's secrets and spend Actions minutes on every push; if you need one, the
+SDK's `npx now-sdk explain ci-integration` describes the OAuth client-credentials setup. Promote to production through
+the Application Repository (`now-sdk cicd publish` / `cicd install`), not with `now-sdk install`.
 
 ## Documentation
 
 - [AGENTS.md](AGENTS.md) — how the app is built and the rules for changing it
+- [docs/PRD.md](docs/PRD.md) — the app's purpose, roles and requirements (fill it in after `npm run setup`)
 - [docs/compatibility.md](docs/compatibility.md) — verified releases, Brazil notes, SDK upgrade steps
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — install, auth, REST, UI page and ATF problems
 - [CHANGELOG.md](CHANGELOG.md) · [RELEASING.md](RELEASING.md) · [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md)

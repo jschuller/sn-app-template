@@ -1,13 +1,17 @@
 {
   "mcpServers": {
     "servicenow": {
-      "command": "uvx",
-      "args": ["mcp-server-servicenow==0.7.0"],
+      "command": "with-secrets",
+      "args": [
+        "SERVICENOW_API_KEY=<secret-store item holding the instance's API key>",
+        "--",
+        "uvx",
+        "mcp-server-servicenow==0.9.3"
+      ],
       "env": {
-        "SERVICENOW_INSTANCE_URL": "${SERVICENOW_INSTANCE_URL}",
-        "SERVICENOW_AUTH_TYPE": "basic",
-        "SERVICENOW_USERNAME": "${SERVICENOW_USERNAME}",
-        "SERVICENOW_PASSWORD": "${SERVICENOW_PASSWORD}",
+        "SERVICENOW_INSTANCE_URL": "https://<instance>.service-now.com",
+        "SERVICENOW_AUTH_TYPE": "api_key",
+        "SERVICENOW_API_KEY_HEADER": "x-sn-apikey",
         "SERVICENOW_READ_ONLY": "true"
       }
     }
