@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/jschuller/sn-app-template/releases/latest"><img src="https://img.shields.io/github/v/release/jschuller/sn-app-template" alt="Release"></a>
   <a href="https://github.com/jschuller/sn-app-template/actions/workflows/ci.yml"><img src="https://github.com/jschuller/sn-app-template/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://www.npmjs.com/package/@servicenow/sdk"><img src="https://img.shields.io/badge/ServiceNow_SDK-4.13.6-005E4D" alt="ServiceNow SDK 4.13.6"></a>
+  <a href="https://www.npmjs.com/package/@servicenow/sdk"><img src="https://img.shields.io/badge/ServiceNow_SDK-4.14.2-005E4D" alt="ServiceNow SDK 4.14.2"></a>
   <a href="docs/compatibility.md"><img src="https://img.shields.io/badge/verified-Brazil-00A893" alt="Verified on Brazil"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
 </p>

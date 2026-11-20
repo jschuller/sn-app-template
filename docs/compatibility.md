@@ -7,6 +7,7 @@ This page records what the template is verified against, what changed in the Ser
 
 | Template | SDK | Instance | Verified |
 |---|---|---|---|
+| Unreleased | 4.14.2 | Brazil Patch 0 | `npm run lint`, `npm run build:ci`, `npm test` (2026-11-20). Install not rerun with the template's own scope; a plain `now-sdk install` over OAuth on 4.14.2 was verified with another app on the same instance |
 | v1.0.0 | 4.13.6 | Brazil Patch 0 (`glide-brazil-08-25-2026__patch0`) | Build, install, 2/2 ATF tests, REST/ACL probes (2026-10-10) |
 | v1.0.0 | 4.13.6 | Australia, Zurich | Not verified. The app uses no Brazil-only features, so it is expected to work; report issues |
 
@@ -14,6 +15,8 @@ This page records what the template is verified against, what changed in the Ser
 `now-sdk cicd testsuite run` (both tests pass) with runtime access enforcing, a user without the app role getting HTTP 403 from the Scripted REST
 API and the REST Table API, and every Scripted REST route returning its documented status codes.
 The UI page was built and linted but not exercised in a browser for v1.0.0.
+
+**SDK 4.14 moves saved credentials.** From 4.14.0, `now-sdk auth` aliases live in an encrypted file (`~/.now-sdk/credentials.enc`, or `SN_SDK_CREDENTIALS_DIR`) with only its key in the OS keychain; the first command on 4.14.x migrates them. 4.14.2 changed the key format and asks for every project on a machine to be on 4.14.2 or later, or a 4.14.0 project may reset the saved aliases. Upgrade all SDK projects on a machine together.
 
 ## Findings from the Brazil verification
 

@@ -7,6 +7,9 @@ version needs manual work to adopt it.
 ## [Unreleased]
 
 ### Added
+- `find-issues` and `issue-interview` skills (`/find-issues`, `/issue-interview <n>`): a read-only scan by parallel
+  sub-agents that proposes issues and files only the ones picked, and an interview that writes a testable spec into
+  an issue and labels it `ready`. Both set `disable-model-invocation: true`, so only the user starts them.
 - `npm test` (`node:test`, run in CI): `tests/setup.test.mjs` runs `scripts/setup.mjs` on temporary copies of the
   repository, with and without git, and checks the scope and name rewrite, the new `scopeId`, the lockfile,
   CHANGELOG and generated-keys reset, and the refusals (unsafe scopes and names, a dirty tree, a second run without
@@ -20,6 +23,8 @@ version needs manual work to adopt it.
   `x_snc_example.admin` may update (200) and delete (204, then 404), with `can_write`/`can_delete` true.
 
 ### Changed
+- `@servicenow/sdk` 4.13.6 → 4.14.2. 4.14 keeps `now-sdk auth` aliases in an encrypted file instead of the keychain
+  entry and migrates them on first use; see `docs/compatibility.md`.
 - `SECURITY.md` explains the advisories reported in the SDK's development dependencies: they do not reach the
   installed app, are fixed by SDK updates, and are not overridden by default.
 

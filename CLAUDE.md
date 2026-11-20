@@ -4,6 +4,8 @@
 
 - Project skills live in `.claude/skills/` (mirrored from `.agents/skills/` by `npm run sync:skills`; edit the
   `.agents/skills/` copy). Use `add-table` to add a table end to end and `deploy-and-verify` to deploy and test.
+  `/find-issues` scans the repository with read-only sub-agents and proposes issues; `/issue-interview <n>` turns
+  an issue into a spec and labels it `ready`. Both start only when you type them.
 - ServiceNow's official SDK skill is a plugin: `/plugin install servicenow-sdk@claude-plugins-official`. It teaches the
   `npx now-sdk explain` workflow that `AGENTS.md` relies on.
 - Optional instance access through MCP: copy `.mcp.json.example` to `.mcp.json` (gitignored) and export the
